@@ -17,7 +17,7 @@ const EMPTY_FORM = {
   username: '',
   password: '',
   telefono: '',
-  tipo_comision: 'por_ingreso',
+  tipo_comision: 'fijo',
   valor_comision: '',
 }
 
@@ -95,13 +95,15 @@ export default function RrppFormModal({ open, onClose, onSuccess }) {
           <label className="block">
             <span className="mb-2 block font-mono text-[9px] font-bold uppercase tracking-wider text-muted">Tipo comisión</span>
             <select className="field" value={form.tipo_comision} onChange={updateField('tipo_comision')} data-testid="rrpp-tipo-comision">
-              <option value="por_ingreso">Por ingreso</option>
-              <option value="fija">Fija</option>
+              <option value="fijo">$ fijo por cada persona que entra</option>
+              <option value="porcentaje">% de lo que recauda</option>
             </select>
           </label>
           <label className="block">
-            <span className="mb-2 block font-mono text-[9px] font-bold uppercase tracking-wider text-muted">Valor comisión ($)</span>
-            <input required type="number" min="0" className="field" value={form.valor_comision} onChange={updateField('valor_comision')} placeholder="500" data-testid="rrpp-valor-comision" />
+            <span className="mb-2 block font-mono text-[9px] font-bold uppercase tracking-wider text-muted">
+              {form.tipo_comision === 'fijo' ? 'Monto por ingreso ($)' : 'Porcentaje (%)'}
+            </span>
+            <input required type="number" min="0" className="field" value={form.valor_comision} onChange={updateField('valor_comision')} placeholder={form.tipo_comision === 'fijo' ? '500' : '10'} data-testid="rrpp-valor-comision" />
           </label>
         </div>
 

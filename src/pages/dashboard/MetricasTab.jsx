@@ -3,6 +3,7 @@ import {
   BarChart, Bar, LineChart, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
+import { useTheme } from '../../context/ThemeContext'
 import { formatMoney } from '../../data/mockData'
 
 /**
@@ -15,11 +16,11 @@ import { formatMoney } from '../../data/mockData'
 
 function KpiCard({ label, value, accent = false }) {
   return (
-    <div className="border border-white/10 bg-floor p-5" data-testid="kpi-card">
-      <p className="font-mono text-[9px] font-bold uppercase tracking-[.14em] text-muted">
+    <div className="panel p-5" data-testid="kpi-card">
+      <p className="font-mono text-[9px] font-bold uppercase tracking-[.14em] text-gray-500 dark:text-muted">
         {label}
       </p>
-      <p className={`mt-3 font-display text-3xl sm:text-4xl ${accent ? 'text-strobe' : 'text-paper-text'}`}>
+      <p className={`mt-3 font-display text-3xl sm:text-4xl ${accent ? 'text-strobe' : 'text-gray-900 dark:text-paper-text'}`}>
         {value}
       </p>
     </div>
@@ -33,6 +34,8 @@ function formatShortMoney(value) {
 }
 
 export default function MetricasTab({ eventos = [], recaudacion }) {
+  const { isDark } = useTheme()
+
   // --- Compute KPIs ---
   const kpis = useMemo(() => {
     const totalNoches = eventos.length
@@ -49,7 +52,7 @@ export default function MetricasTab({ eventos = [], recaudacion }) {
   const barData = useMemo(() =>
     eventos.map((ev) => ({
       nombre: ev.nombre,
-      recaudacion: ev.precio_publicado * Math.floor(ev.aforo_max * 0.6), // estimated from mock
+      recaudacion: ev.precio_publicado * Math.floor(ev.aforo_max * 0.6),
     })),
     [eventos]
   )
@@ -64,12 +67,20 @@ export default function MetricasTab({ eventos = [], recaudacion }) {
     }))
   }, [kpis.vendidas])
 
+  // Chart theme colors
+  const gridStroke = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.08)'
+  const axisStroke = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.15)'
+  const tickFill = isDark ? '#8A87A3' : '#6B7280'
+  const tooltipBg = isDark ? '#141220' : '#ffffff'
+  const tooltipBorder = isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid #e5e7eb'
+  const tooltipColor = isDark ? '#EDEBF5' : '#111827'
+
   return (
     <div data-testid="metricas-tab">
       {/* --- Filters placeholder --- */}
       <div className="mb-6 flex flex-wrap items-center gap-3">
-        <p className="font-mono text-[10px] font-bold uppercase tracking-wider text-muted">
-          Esta semana · {kpis.totalNoches} noches
+        <p className="font-mono text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-muted">
+          Esta semana · {kpis.totalNoches} eventos
         </p>
       </div>
 
@@ -77,31 +88,31 @@ export default function MetricasTab({ eventos = [], recaudacion }) {
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" data-testid="kpi-grid">
         <KpiCard label="Recaudación" value={formatMoney(kpis.totalRecaudado)} accent />
         <KpiCard label="Vendidas" value={String(kpis.vendidas)} />
-        <KpiCard label="Noches" value={String(kpis.totalNoches)} />
-        <KpiCard label="Promedio/Noche" value={formatMoney(kpis.promedio)} />
+        <KpiCard label="Eventos" value={String(kpis.totalNoches)} />
+        <KpiCard label="Promedio/Evento" value={formatMoney(kpis.promedio)} />
       </div>
 
-      {/* --- Bar Chart: Recaudación por noche --- */}
-      <section className="mt-8 border border-white/10 bg-floor p-5">
-        <p className="mb-5 font-mono text-[10px] font-bold uppercase tracking-wider text-muted">
-          Recaudación por noche (miles $)
+      {/* --- Bar Chart: Recaudación por evento --- */}
+      <section className="panel mt-8 p-5">
+        <p className="mb-5 font-mono text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-muted">
+          Recaudación por evento (miles $)
         </p>
         <div className="h-64" data-testid="bar-chart">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={barData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+              <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
               <XAxis
                 dataKey="nombre"
-                tick={{ fill: '#8A87A3', fontSize: 10, fontFamily: 'Space Mono' }}
-                axisLine={{ stroke: 'rgba(255,255,255,0.1)' }}
+                tick={{ fill: tickFill, fontSize: 10, fontFamily: 'Space Mono' }}
+                axisLine={{ stroke: axisStroke }}
               />
               <YAxis
-                tick={{ fill: '#8A87A3', fontSize: 10, fontFamily: 'Space Mono' }}
-                axisLine={{ stroke: 'rgba(255,255,255,0.1)' }}
+                tick={{ fill: tickFill, fontSize: 10, fontFamily: 'Space Mono' }}
+                axisLine={{ stroke: axisStroke }}
                 tickFormatter={(v) => `${Math.round(v / 1000)}K`}
               />
               <Tooltip
-                contentStyle={{ background: '#141220', border: '1px solid rgba(255,255,255,0.1)', color: '#EDEBF5' }}
+                contentStyle={{ background: tooltipBg, border: tooltipBorder, color: tooltipColor }}
                 formatter={(value) => [formatMoney(value), 'Recaudación']}
               />
               <Bar dataKey="recaudacion" fill="#8B5CF6" radius={[2, 2, 0, 0]} />
@@ -111,25 +122,25 @@ export default function MetricasTab({ eventos = [], recaudacion }) {
       </section>
 
       {/* --- Line Chart: Ventas diarias últimos 7 días --- */}
-      <section className="mt-5 border border-white/10 bg-floor p-5">
-        <p className="mb-5 font-mono text-[10px] font-bold uppercase tracking-wider text-muted">
+      <section className="panel mt-5 p-5">
+        <p className="mb-5 font-mono text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-muted">
           Ventas diarias (últimos 7 días)
         </p>
         <div className="h-52" data-testid="line-chart">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={lineData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+              <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
               <XAxis
                 dataKey="dia"
-                tick={{ fill: '#8A87A3', fontSize: 10, fontFamily: 'Space Mono' }}
-                axisLine={{ stroke: 'rgba(255,255,255,0.1)' }}
+                tick={{ fill: tickFill, fontSize: 10, fontFamily: 'Space Mono' }}
+                axisLine={{ stroke: axisStroke }}
               />
               <YAxis
-                tick={{ fill: '#8A87A3', fontSize: 10, fontFamily: 'Space Mono' }}
-                axisLine={{ stroke: 'rgba(255,255,255,0.1)' }}
+                tick={{ fill: tickFill, fontSize: 10, fontFamily: 'Space Mono' }}
+                axisLine={{ stroke: axisStroke }}
               />
               <Tooltip
-                contentStyle={{ background: '#141220', border: '1px solid rgba(255,255,255,0.1)', color: '#EDEBF5' }}
+                contentStyle={{ background: tooltipBg, border: tooltipBorder, color: tooltipColor }}
               />
               <Line
                 type="monotone"

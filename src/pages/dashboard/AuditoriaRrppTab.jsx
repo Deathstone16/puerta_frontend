@@ -75,50 +75,50 @@ export default function AuditoriaRrppTab({ eventoId, onCreateRrpp, onAsignarRrpp
       {/* Content */}
       {loading ? (
         <div className="panel grid min-h-48 place-items-center p-8">
-          <div className="size-8 animate-spin border-2 border-white/10 border-t-strobe" />
+          <div className="size-8 animate-spin border-2 border-gray-200 border-t-strobe dark:border-white/10" />
         </div>
       ) : sorted.length === 0 ? (
         <div className="panel grid min-h-48 place-items-center p-8 text-center" data-testid="empty-state">
           <div>
-            <Icon name="users" size={38} className="mx-auto text-muted" />
+            <Icon name="users" size={38} className="mx-auto text-gray-400 dark:text-muted" />
             <p className="display-title mt-5 text-2xl">SIN DATOS</p>
-            <p className="mt-3 text-sm text-muted">No hay datos de RRPP para este evento.</p>
+            <p className="mt-3 text-sm text-gray-500 dark:text-muted">No hay datos de RRPP para este evento.</p>
           </div>
         </div>
       ) : (
-        <div className="overflow-x-auto" data-testid="ranking-table-container">
+        <div className="panel overflow-x-auto" data-testid="ranking-table-container">
           <table className="w-full min-w-[600px] text-left" data-testid="ranking-table">
             <thead>
-              <tr className="border-b border-white/10">
-                <th className="p-3 font-mono text-[9px] font-bold uppercase tracking-wider text-muted">RRPP</th>
-                <th className="p-3 font-mono text-[9px] font-bold uppercase tracking-wider text-muted">Anotados</th>
-                <th className="p-3 font-mono text-[9px] font-bold uppercase tracking-wider text-muted">Ingresados</th>
-                <th className="p-3 font-mono text-[9px] font-bold uppercase tracking-wider text-muted">Efectividad</th>
-                <th className="p-3 font-mono text-[9px] font-bold uppercase tracking-wider text-muted text-right">Recaudado</th>
+              <tr className="border-b border-gray-200 dark:border-white/10">
+                <th className="p-3 font-mono text-[9px] font-bold uppercase tracking-wider text-gray-500 dark:text-muted">RRPP</th>
+                <th className="p-3 font-mono text-[9px] font-bold uppercase tracking-wider text-gray-500 dark:text-muted">Anotados</th>
+                <th className="p-3 font-mono text-[9px] font-bold uppercase tracking-wider text-gray-500 dark:text-muted">Ingresados</th>
+                <th className="p-3 font-mono text-[9px] font-bold uppercase tracking-wider text-gray-500 dark:text-muted">Efectividad</th>
+                <th className="p-3 font-mono text-[9px] font-bold uppercase tracking-wider text-gray-500 dark:text-muted text-right">Recaudado</th>
               </tr>
             </thead>
             <tbody>
               {sorted.map((row) => (
-                <tr key={row.rrpp_id} className="border-b border-white/5" data-testid="ranking-row">
-                  <td className="p-3 text-sm font-semibold">{row.nombre}</td>
-                  <td className="p-3 font-mono text-sm">{row.anotados}</td>
+                <tr key={row.rrpp_id} className="border-b border-gray-100 dark:border-white/5" data-testid="ranking-row">
+                  <td className="p-3 text-sm font-semibold text-gray-900 dark:text-paper-text">{row.nombre}</td>
+                  <td className="p-3 font-mono text-sm text-gray-700 dark:text-paper-text">{row.anotados}</td>
                   <td className="p-3 font-mono text-sm text-strobe">{row.ingresados}</td>
                   <td className={`p-3 font-mono text-sm font-bold ${getConversionColor(row.tasa_conversion)}`}>
                     {row.tasa_conversion}%
                   </td>
-                  <td className="p-3 text-right font-mono text-sm">{formatMoney(row.recaudado_total)}</td>
+                  <td className="p-3 text-right font-mono text-sm text-gray-700 dark:text-paper-text">{formatMoney(row.recaudado_total)}</td>
                 </tr>
               ))}
             </tbody>
             <tfoot>
-              <tr className="border-t border-white/15 bg-floor" data-testid="totals-row">
-                <td className="p-3 font-mono text-[10px] font-bold uppercase">Total</td>
-                <td className="p-3 font-mono text-sm font-bold">{totals.anotados}</td>
+              <tr className="border-t border-gray-200 bg-gray-100 dark:border-white/15 dark:bg-floor" data-testid="totals-row">
+                <td className="p-3 font-mono text-[10px] font-bold uppercase text-gray-900 dark:text-paper-text">Total</td>
+                <td className="p-3 font-mono text-sm font-bold text-gray-900 dark:text-paper-text">{totals.anotados}</td>
                 <td className="p-3 font-mono text-sm font-bold text-strobe">{totals.ingresados}</td>
                 <td className={`p-3 font-mono text-sm font-bold ${getConversionColor(totalConversion)}`}>
                   {totalConversion}%
                 </td>
-                <td className="p-3 text-right font-mono text-sm font-bold">{formatMoney(totals.recaudado)}</td>
+                <td className="p-3 text-right font-mono text-sm font-bold text-gray-900 dark:text-paper-text">{formatMoney(totals.recaudado)}</td>
               </tr>
             </tfoot>
           </table>

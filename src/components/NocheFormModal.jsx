@@ -241,8 +241,8 @@ export default function NocheFormModal({ open, onClose, evento = null, onSuccess
 
         {/* Price Preview */}
         {(pricePreview || previewLoading) && (
-          <div className="mt-5 border border-white/10 bg-void p-4" data-testid="price-preview">
-            <p className="font-mono text-[9px] font-bold uppercase tracking-wider text-muted">Desglose de precio</p>
+          <div className="mt-5 border border-gray-200 bg-gray-50 p-4 dark:border-white/10 dark:bg-void" data-testid="price-preview">
+            <p className="font-mono text-[9px] font-bold uppercase tracking-wider text-gray-500 dark:text-muted">Desglose de precio</p>
             {previewLoading ? (
               <p className="mt-2 text-xs text-muted">Calculando...</p>
             ) : pricePreview && (
@@ -259,7 +259,7 @@ export default function NocheFormModal({ open, onClose, evento = null, onSuccess
                   <span className="text-muted">Fee Norware</span>
                   <span>{formatMoney(pricePreview.fee_norware)}</span>
                 </div>
-                <div className="flex justify-between border-t border-white/10 pt-2 font-bold">
+                <div className="flex justify-between border-t border-gray-200 pt-2 font-bold dark:border-white/10">
                   <span>Precio publicado</span>
                   <span className="text-strobe">{formatMoney(pricePreview.precio_publicado)}</span>
                 </div>

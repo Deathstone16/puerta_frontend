@@ -12,15 +12,15 @@ import { formatMoney } from '../../data/mockData'
  */
 
 function getEstadoBorderColor(estado) {
-  if (estado === 'publicado') return '#8B5CF6' // uv
+  if (estado === 'publicado' || estado === 'activo') return '#8B5CF6' // uv
   if (estado === 'cancelado') return '#E23B5A' // door-red
   return '#8A87A3' // muted
 }
 
 function getEstadoBadge(estado) {
-  if (estado === 'publicado') return { label: 'publicada', className: 'border-strobe text-strobe' }
-  if (estado === 'cancelado') return { label: 'cancelada', className: 'border-door-red text-door-red' }
-  return { label: estado, className: 'border-muted text-muted' }
+  if (estado === 'publicado' || estado === 'activo') return { label: 'activo', className: 'border-strobe text-strobe' }
+  if (estado === 'cancelado') return { label: 'cancelado', className: 'border-door-red text-door-red' }
+  return { label: estado, className: 'border-gray-400 text-gray-400 dark:border-muted dark:text-muted' }
 }
 
 function formatDate(isoDate) {
@@ -43,10 +43,10 @@ export default function NochesTab({ eventos = [], onEdit, onCancel, onCreate }) 
       <div className="mb-6 flex items-center justify-between">
         <div>
           <p className="eyebrow">Gestión de eventos</p>
-          <h2 className="display-title mt-2 text-3xl">NOCHES</h2>
+          <h2 className="display-title mt-2 text-3xl">EVENTOS</h2>
         </div>
         <button onClick={onCreate} className="btn-primary" data-testid="crear-noche-btn">
-          <Icon name="plus" size={17} /> Crear nueva noche
+          <Icon name="plus" size={17} /> Crear evento
         </button>
       </div>
 
@@ -54,9 +54,9 @@ export default function NochesTab({ eventos = [], onEdit, onCancel, onCreate }) 
       {eventos.length === 0 ? (
         <div className="panel grid min-h-48 place-items-center p-8 text-center">
           <div>
-            <Icon name="calendar" size={38} className="mx-auto text-muted" />
-            <p className="display-title mt-5 text-2xl">SIN NOCHES</p>
-            <p className="mt-3 text-sm text-muted">Creá tu primera noche para empezar a vender entradas.</p>
+            <Icon name="calendar" size={38} className="mx-auto text-gray-400 dark:text-muted" />
+            <p className="display-title mt-5 text-2xl">SIN EVENTOS</p>
+            <p className="mt-3 text-sm text-gray-500 dark:text-muted">Creá tu primer evento para empezar a vender entradas.</p>
           </div>
         </div>
       ) : (
@@ -68,19 +68,19 @@ export default function NochesTab({ eventos = [], onEdit, onCancel, onCreate }) 
             return (
               <article
                 key={evento.id}
-                className="flex items-center gap-4 border border-white/10 bg-floor p-4 transition hover:border-white/20"
+                className="flex items-center gap-4 border border-gray-200 bg-gray-50 p-4 transition hover:border-gray-300 dark:border-white/10 dark:bg-floor dark:hover:border-white/20"
                 style={{ borderLeftWidth: '4px', borderLeftColor: borderColor }}
                 data-testid="evento-card"
               >
                 {/* Event info */}
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-3">
-                    <h3 className="truncate font-display text-xl uppercase">{evento.nombre}</h3>
+                    <h3 className="truncate font-display text-xl uppercase text-gray-900 dark:text-paper-text">{evento.nombre}</h3>
                     <span className={`shrink-0 border px-2 py-0.5 font-mono text-[9px] font-bold uppercase ${badge.className}`}>
                       {badge.label}
                     </span>
                   </div>
-                  <p className="mt-2 font-mono text-[10px] uppercase tracking-wider text-muted">
+                  <p className="mt-2 font-mono text-[10px] uppercase tracking-wider text-gray-500 dark:text-muted">
                     {formatDate(evento.fecha)}
                   </p>
                 </div>
@@ -89,11 +89,11 @@ export default function NochesTab({ eventos = [], onEdit, onCancel, onCreate }) 
                 <div className="hidden items-center gap-5 sm:flex">
                   <div className="text-right">
                     <p className="font-mono text-xs font-bold text-strobe">{formatMoney(evento.precio_publicado)}</p>
-                    <p className="font-mono text-[9px] text-muted">publicado</p>
+                    <p className="font-mono text-[9px] text-gray-500 dark:text-muted">publicado</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-mono text-xs font-bold">{evento.aforo_max}</p>
-                    <p className="font-mono text-[9px] text-muted">aforo</p>
+                    <p className="font-mono text-xs font-bold text-gray-900 dark:text-paper-text">{evento.aforo_max}</p>
+                    <p className="font-mono text-[9px] text-gray-500 dark:text-muted">aforo</p>
                   </div>
                 </div>
 
@@ -101,7 +101,7 @@ export default function NochesTab({ eventos = [], onEdit, onCancel, onCreate }) 
                 <div className="flex shrink-0 items-center gap-1">
                   <button
                     onClick={() => onEdit(evento)}
-                    className="grid size-10 place-items-center border border-white/15 text-muted transition hover:border-strobe hover:text-strobe"
+                    className="grid size-10 place-items-center border border-gray-200 text-gray-400 transition hover:border-strobe hover:text-strobe dark:border-white/15 dark:text-muted"
                     aria-label={`Editar ${evento.nombre}`}
                     data-testid="editar-btn"
                   >
@@ -110,7 +110,7 @@ export default function NochesTab({ eventos = [], onEdit, onCancel, onCreate }) 
                   <button
                     onClick={() => onCancel(evento.id)}
                     disabled={evento.estado === 'cancelado'}
-                    className="grid size-10 place-items-center border border-white/15 text-muted transition hover:border-door-red hover:text-door-red disabled:cursor-not-allowed disabled:opacity-30"
+                    className="grid size-10 place-items-center border border-gray-200 text-gray-400 transition hover:border-door-red hover:text-door-red disabled:cursor-not-allowed disabled:opacity-30 dark:border-white/15 dark:text-muted"
                     aria-label={`Cancelar ${evento.nombre}`}
                     data-testid="cancelar-btn"
                   >
