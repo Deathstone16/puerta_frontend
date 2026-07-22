@@ -1,15 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Icon from '../components/Icons'
-import MercadoPagoConnect from '../components/MercadoPagoConnect'
 import NocheFormModal from '../components/NocheFormModal'
 import PriceBreakdownModal from '../components/PriceBreakdownModal'
 import RrppFormModal from '../components/RrppFormModal'
 import AsignarRrppModal from '../components/AsignarRrppModal'
 import { useAuth } from '../context/AuthContext'
-import { formatMoney } from '../data/mockData'
 import {
   mockAforo,
-  mockBoliche,
   mockEventos,
   mockRecaudacion,
 } from '../data/dashboardMockData'
@@ -29,7 +26,6 @@ export default function DashboardPage() {
 
   // --- State ---
   const [activeTab, setActiveTab] = useState('metricas')
-  const [boliche, setBoliche] = useState(null)
   const [eventos, setEventos] = useState([])
   const [aforo, setAforo] = useState(null)
   const [aforoStatus, setAforoStatus] = useState('loading')
@@ -37,24 +33,15 @@ export default function DashboardPage() {
   const [modalState, setModalState] = useState({ type: null, data: null })
   const [breakdownData, setBreakdownData] = useState(null)
 
-  // --- Data fetching: boliche + eventos on mount ---
+  // --- Data fetching: eventos on mount ---
   useEffect(() => {
     let active = true
     async function load() {
       try {
-        const [b, e] = await Promise.all([
-          api.get('/boliches/mio/'),
-          api.get('/eventos/'),
-        ])
-        if (active) {
-          setBoliche(b)
-          setEventos(Array.isArray(e) ? e : [])
-        }
+        const e = await api.get('/eventos/')
+        if (active) setEventos(Array.isArray(e) ? e : [])
       } catch (error) {
-        if (active && error.status === 0) {
-          setBoliche(mockBoliche)
-          setEventos(mockEventos)
-        }
+        if (active && error.status === 0) setEventos(mockEventos)
       }
     }
     load()
@@ -120,10 +107,10 @@ export default function DashboardPage() {
 
   // --- Cancel event ---
   const handleCancel = useCallback(async (eventoId) => {
-    const confirmado = window.confirm('¿Cancelar esta noche? Esta acción no se puede deshacer.')
+    const confirmado = window.confirm('¿Cancelar este evento? Esta acción no se puede deshacer.')
     if (!confirmado) return
     try {
-      await api.post(`/eventos/${eventoId}/cancelar/`, { motivo: 'Cancelado por dueño' })
+      await api.post(`/eventos/${eventoId}/cancelar/`, { motivo: 'Cancelado por organizador' })
       setEventos((prev) => prev.map((ev) =>
         ev.id === eventoId ? { ...ev, estado: 'cancelado' } : ev
       ))
@@ -145,7 +132,7 @@ export default function DashboardPage() {
       <div className="mb-9 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="eyebrow mb-3">Sala de control</p>
-          <h1 className="display-title text-5xl sm:text-7xl">MIS NOCHES</h1>
+          <h1 className="display-title text-5xl sm:text-7xl">MIS EVENTOS</h1>
         </div>
         <div className="flex items-center gap-3">
           {/* Aforo badge */}
@@ -162,17 +149,10 @@ export default function DashboardPage() {
             onClick={() => openModal('noche-create')}
             className="btn-primary"
           >
-            <Icon name="plus" size={17} /> Nueva noche
+            <Icon name="plus" size={17} /> Nuevo evento
           </button>
         </div>
       </div>
-
-      {/* --- MP Connection widget --- */}
-      {boliche && (
-        <div className="mb-6">
-          <MercadoPagoConnect mpConnected={boliche.mp_connected} />
-        </div>
-      )}
 
       {/* --- Tab Navigator --- */}
       <nav className="mb-8 flex gap-1 border-b border-gray-200 dark:border-white/10" aria-label="Secciones del dashboard">
@@ -218,10 +198,8 @@ export default function DashboardPage() {
         open={modalState.type === 'noche-create' || modalState.type === 'noche-edit'}
         onClose={closeModal}
         evento={modalState.type === 'noche-edit' ? modalState.data : null}
-        bolicheId={boliche?.id}
         onSuccess={(createdData) => {
           refreshEventos()
-          // Show breakdown popup after creating (not editing)
           if (modalState.type === 'noche-create' && createdData?.priceData) {
             setBreakdownData(createdData)
           }

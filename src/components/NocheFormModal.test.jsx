@@ -17,7 +17,6 @@ const baseProps = {
   open: true,
   onClose: vi.fn(),
   evento: null,
-  bolicheId: 1,
   onSuccess: vi.fn(),
 }
 
@@ -106,7 +105,6 @@ describe('NocheFormModal', () => {
 
       await waitFor(() => {
         expect(api.post).toHaveBeenCalledWith('/eventos/crear/', {
-          boliche_id: 1,
           nombre: 'TEST EVENT',
           fecha: '2026-09-01T23:00',
           aforo_max: 500,

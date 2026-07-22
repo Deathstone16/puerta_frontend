@@ -11,7 +11,6 @@ import { api } from '../lib/api'
  *   open: boolean
  *   onClose: () => void
  *   evento: Evento | null — null = create mode, object = edit mode
- *   bolicheId: number
  *   onSuccess: () => void — refresh event list after mutation
  */
 
@@ -36,7 +35,7 @@ function formFromEvento(evento) {
   }
 }
 
-export default function NocheFormModal({ open, onClose, evento = null, bolicheId, onSuccess }) {
+export default function NocheFormModal({ open, onClose, evento = null, onSuccess }) {
   const isEdit = Boolean(evento?.id)
   const [form, setForm] = useState(EMPTY_FORM)
   const [errors, setErrors] = useState({})
@@ -119,13 +118,18 @@ export default function NocheFormModal({ open, onClose, evento = null, bolicheId
       if (isEdit) {
         await api.patch(`/eventos/${evento.id}/`, payload)
       } else {
-        await api.post('/eventos/crear/', { ...payload, boliche_id: bolicheId })
+        await api.post('/eventos/crear/', payload)
       }
       onSuccess({ nombre: form.nombre.trim(), priceData: pricePreview })
       onClose()
     } catch (error) {
       if (error.status === 405) {
         setApiError('Este evento no se puede modificar.')
+      } else if (error.data && typeof error.data === 'object' && !error.data.detail) {
+        const msgs = Object.entries(error.data)
+          .map(([key, val]) => `${key}: ${Array.isArray(val) ? val.join(', ') : val}`)
+          .join(' | ')
+        setApiError(msgs || 'Error al guardar el evento.')
       } else {
         setApiError(error.data?.detail || error.message || 'Error al guardar el evento.')
       }
