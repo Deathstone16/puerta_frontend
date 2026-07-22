@@ -5,26 +5,10 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
-    color-scheme: light;
-    --color-bg: #FFFFFF;
-    --color-surface: #F4F4F8;
-    --color-text: #1A1A2E;
-    --color-text-muted: #6B6B80;
-    --color-border: rgba(0,0,0,0.08);
-  }
-  .dark {
-    color-scheme: dark;
-    --color-bg: #0A0A10;
-    --color-surface: #141220;
-    --color-text: #EDF8F5;
-    --color-text-muted: #8A87A3;
-    --color-border: rgba(255,255,255,0.1);
-  }
-  * { @apply border-[var(--color-border)]; }
   html { scroll-behavior: smooth; overflow-x: hidden; }
-  body { @apply m-0 min-w-[320px] bg-[var(--color-bg)] font-body text-[var(--color-text)] antialiased overflow-x-hidden; }
-  body.dark::before {
+  body { @apply m-0 min-w-[320px] overflow-x-hidden bg-white font-body text-gray-900 antialiased dark:bg-void dark:text-paper-text; }
+  /* Noise overlay only in dark mode */
+  .dark body::before {
     content: '';
     position: fixed;
     inset: 0;
@@ -33,6 +17,7 @@
     opacity: .035;
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 160 160' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.75'/%3E%3C/svg%3E");
   }
+  * { @apply border-gray-200 dark:border-white/10; }
   ::selection { @apply bg-uv text-white; }
   button, a, input, select { -webkit-tap-highlight-color: transparent; }
 }
@@ -41,12 +26,13 @@
   .container-page { @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8; }
   .display-title { @apply font-display uppercase leading-[.88] tracking-[-0.04em]; }
   .eyebrow { @apply font-mono text-[10px] font-bold uppercase tracking-[.18em] text-strobe; }
-  .btn-primary { @apply inline-flex min-h-12 items-center justify-center gap-2 bg-uv px-5 font-mono text-xs font-bold uppercase tracking-wider text-white transition hover:bg-violet-500 focus:outline-none focus:ring-2 focus:ring-strobe focus:ring-offset-2 focus:ring-offset-[var(--color-bg)] disabled:cursor-not-allowed disabled:opacity-50; }
-  .btn-secondary { @apply inline-flex min-h-12 items-center justify-center gap-2 border border-[var(--color-border)] bg-[var(--color-surface)] px-5 font-mono text-xs font-bold uppercase tracking-wider text-[var(--color-text)] transition hover:border-strobe/70 hover:text-strobe focus:outline-none focus:ring-2 focus:ring-strobe; }
-  .panel { @apply border border-[var(--color-border)] bg-[var(--color-surface)]; }
-  .interface-panel { @apply rounded-interface border border-[var(--color-border)] bg-[var(--color-surface)]; }
-  .field { @apply min-h-12 w-full rounded-none border border-[var(--color-border)] bg-[var(--color-bg)] px-4 font-mono text-sm text-[var(--color-text)] outline-none transition placeholder:text-[var(--color-text-muted)] placeholder:opacity-60 focus:border-strobe; }
-  .ticket-edge { background-image: radial-gradient(circle at 0 50%, transparent 7px, var(--color-surface) 8px), radial-gradient(circle at 100% 50%, transparent 7px, var(--color-surface) 8px); background-position: left, right; background-size: 51% 100%; background-repeat: no-repeat; }
+  .btn-primary { @apply inline-flex min-h-12 items-center justify-center gap-2 bg-uv px-5 font-mono text-xs font-bold uppercase tracking-wider text-white transition hover:bg-violet-500 focus:outline-none focus:ring-2 focus:ring-strobe focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-void disabled:cursor-not-allowed disabled:opacity-50; }
+  .btn-secondary { @apply inline-flex min-h-12 items-center justify-center gap-2 border border-gray-200 bg-gray-50 px-5 font-mono text-xs font-bold uppercase tracking-wider text-gray-900 transition hover:border-strobe/70 hover:text-strobe focus:outline-none focus:ring-2 focus:ring-strobe dark:border-white/20 dark:bg-white/[.04] dark:text-paper-text; }
+  .panel { @apply border border-gray-200 bg-gray-50 dark:border-white/10 dark:bg-floor; }
+  .interface-panel { @apply rounded-interface border border-gray-200 bg-gray-50 dark:border-white/10 dark:bg-floor; }
+  .field { @apply min-h-12 w-full rounded-none border border-gray-200 bg-white px-4 font-mono text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-strobe dark:border-white/15 dark:bg-void dark:text-paper-text dark:placeholder:text-muted/60; }
+  .ticket-edge { background-image: radial-gradient(circle at 0 50%, transparent 7px, #F5F5F9 8px), radial-gradient(circle at 100% 50%, transparent 7px, #F5F5F9 8px); background-position: left, right; background-size: 51% 100%; background-repeat: no-repeat; }
+  .dark .ticket-edge { background-image: radial-gradient(circle at 0 50%, transparent 7px, #141220 8px), radial-gradient(circle at 100% 50%, transparent 7px, #141220 8px); }
   .scanlines { background-image: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,255,255,.025) 4px); }
   .status-dot { @apply inline-block size-2 rounded-full bg-emerald-400 shadow-[0_0_12px_#34d399]; }
   .guard-qr-reader { @apply size-full; }

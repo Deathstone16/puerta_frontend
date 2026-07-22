@@ -151,7 +151,7 @@ export default function DashboardPage() {
           {/* Aforo badge */}
           {aforo && (
             <div className="flex items-center gap-2 border border-strobe/60 bg-strobe/10 px-3 py-2">
-              <span className={aforoStatus === 'live' ? 'status-dot' : 'inline-block size-2 bg-muted'} />
+              <span className={aforoStatus === 'live' ? 'status-dot' : 'inline-block size-2 bg-gray-400 dark:bg-muted'} />
               <span className="font-mono text-xs font-bold text-strobe">
                 {aforo.ingresados} / {aforo.aforo_max} ahora
               </span>
@@ -175,15 +175,15 @@ export default function DashboardPage() {
       )}
 
       {/* --- Tab Navigator --- */}
-      <nav className="mb-8 flex gap-1 border-b border-white/10" aria-label="Secciones del dashboard">
+      <nav className="mb-8 flex gap-1 border-b border-gray-200 dark:border-white/10" aria-label="Secciones del dashboard">
         {TABS.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={`min-h-12 border-b-2 px-4 font-mono text-xs font-bold uppercase tracking-wider transition ${
               activeTab === tab.id
-                ? 'border-uv text-paper-text'
-                : 'border-transparent text-muted hover:text-paper-text'
+                ? 'border-uv text-gray-900 dark:text-paper-text'
+                : 'border-transparent text-gray-400 hover:text-gray-700 dark:text-muted dark:hover:text-paper-text'
             }`}
             aria-selected={activeTab === tab.id}
             role="tab"

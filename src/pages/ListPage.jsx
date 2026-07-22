@@ -98,7 +98,7 @@ export default function ListPage() {
               <input required className="field" placeholder="NOMBRE" value={form.nombre} onChange={update('nombre')} />
               <input required className="field" placeholder="APELLIDO" value={form.apellido} onChange={update('apellido')} />
               <input required inputMode="numeric" pattern="[0-9]{7,9}" className="field sm:col-span-2" placeholder="DNI SIN PUNTOS" value={form.dni} onChange={update('dni')} />
-              <input required className="field sm:col-span-2" placeholder="@INSTAGRAM (sin el @)" value={form.instagram} onChange={update('instagram')} />
+              <input className="field sm:col-span-2" placeholder="@tu.usuario de Instagram (opcional)" value={form.instagram} onChange={update('instagram')} />
             </div>
 
             {status === 'error' && (

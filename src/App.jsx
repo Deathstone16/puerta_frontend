@@ -9,6 +9,7 @@ import CashierPage from './pages/CashierPage'
 import DashboardPage from './pages/DashboardPage'
 import DeferredRolePage from './pages/DeferredRolePage'
 import AdminPage from './pages/AdminPage'
+import RrppListaPage from './pages/RrppListaPage'
 import GuardPage from './pages/GuardPage'
 import EventDetailPage from './pages/EventDetailPage'
 import HomePage from './pages/HomePage'
@@ -43,6 +44,7 @@ export default function App() {
 
           <Route element={<ProtectedRoute roles={['rrpp']} />}>
             <Route path="/rrpp" element={<RrppPage />} />
+            <Route path="/rrpp/lista/:eventoId" element={<RrppListaPage />} />
           </Route>
 
           <Route element={<ProtectedRoute roles={['guardia']} />}>

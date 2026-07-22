@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { AuthProvider } from '../context/AuthContext'
+import { ThemeProvider } from '../context/ThemeContext'
 import AdminPage from './AdminPage'
 import { adminMockData } from '../data/adminMockData'
 
@@ -24,9 +25,11 @@ import { api } from '../lib/api'
 function renderAdmin() {
   return render(
     <MemoryRouter>
-      <AuthProvider>
-        <AdminPage />
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <AdminPage />
+        </AuthProvider>
+      </ThemeProvider>
     </MemoryRouter>
   )
 }

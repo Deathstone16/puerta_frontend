@@ -24,6 +24,7 @@ function normalizeGuest(guest) {
     nombre: String(firstDefined(guest.nombre, guest.name, '')).trim(),
     apellido: String(firstDefined(guest.apellido, guest.last_name, guest.lastname, '')).trim(),
     dni: String(firstDefined(guest.dni, guest.documento, guest.document_number, '')).trim(),
+    instagram: String(firstDefined(guest.instagram, '')).trim(),
     estado: firstDefined(guest.estado, guest.status, null),
     creado_en: firstDefined(guest.creado_en, guest.created_at, guest.fecha_alta, null),
   }
@@ -37,6 +38,7 @@ function normalizeRrppEvent(event, index) {
   const slug = firstDefined(source.slug, source.lista_slug, source.link_slug)
   const suppliedLink = firstDefined(source.link_personal, source.enlace_personal, source.url_lista, source.lista_url, source.link)
   const recentSource = firstDefined(
+    source.estadisticas?.invitados_recientes,
     source.invitados_recientes,
     source.ultimos_invitados,
     source.recent_guests,
@@ -123,7 +125,7 @@ function Metric({ label, value, accent = false }) {
 }
 
 function EventOption({ event, selected, onSelect }) {
-  return <button type="button" onClick={onSelect} className={`min-w-[250px] border p-4 text-left transition lg:min-w-0 lg:w-full ${selected ? 'border-strobe bg-strobe/10' : 'border-white/10 bg-floor hover:border-white/30'}`}><div className="flex items-start justify-between gap-3"><p className={`font-display text-xl uppercase leading-none ${selected ? 'text-strobe' : ''}`}>{event.nombre}</p>{selected && <Icon name="check" size={16} className="shrink-0 text-strobe"/>}</div><p className="mt-3 font-mono text-[9px] uppercase tracking-wider text-muted">{displayDate(event.fecha)}</p><p className="mt-1 text-xs text-muted">{event.club || 'Club no informado'}</p><div className="mt-4 flex items-center justify-between border-t border-white/10 pt-3 font-mono text-[10px] uppercase"><span>Anotados</span><strong className="text-paper-text">{displayCount(event.anotados)} / {displayCount(event.cupo_max)}</strong></div></button>
+  return <a href={`/rrpp/lista/${event.id}`} className={`block min-w-[250px] border p-4 text-left transition lg:min-w-0 lg:w-full ${selected ? 'border-strobe bg-strobe/10' : 'border-gray-200 bg-gray-50 hover:border-gray-300 dark:border-white/10 dark:bg-floor dark:hover:border-white/30'}`}><div className="flex items-start justify-between gap-3"><p className={`font-display text-xl uppercase leading-none ${selected ? 'text-strobe' : ''}`}>{event.nombre}</p></div><p className="mt-3 font-mono text-[9px] uppercase tracking-wider text-gray-500 dark:text-muted">{displayDate(event.fecha)}</p><p className="mt-1 text-xs text-gray-500 dark:text-muted">{event.club || 'Club no informado'}</p><div className="mt-4 flex items-center justify-between border-t border-gray-200 pt-3 font-mono text-[10px] uppercase dark:border-white/10"><span>Anotados</span><strong className="text-gray-900 dark:text-paper-text">{displayCount(event.anotados)} / {displayCount(event.cupo_max)}</strong></div></a>
 }
 
 export default function RrppPage() {

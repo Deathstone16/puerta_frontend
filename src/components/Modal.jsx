@@ -15,9 +15,9 @@ export default function Modal({ open, onClose, children, label = 'Ventana modal'
 
   if (!open) return null
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-void/90 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label={label} onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-      <div className="relative w-full max-w-lg border-2 border-strobe bg-void p-6 shadow-[10px_10px_0_#8B5CF6] md:p-9">
-        <button onClick={onClose} className="absolute right-3 top-3 grid size-10 place-items-center text-muted transition hover:text-white" aria-label="Cerrar">
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4 backdrop-blur-sm dark:bg-void/90" role="dialog" aria-modal="true" aria-label={label} onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
+      <div className="relative w-full max-w-lg border-2 border-strobe bg-white p-6 shadow-[10px_10px_0_#8B5CF6] dark:bg-void md:p-9">
+        <button onClick={onClose} className="absolute right-3 top-3 grid size-10 place-items-center text-gray-400 transition hover:text-gray-900 dark:text-muted dark:hover:text-white" aria-label="Cerrar">
           <Icon name="close" />
         </button>
         {children}
