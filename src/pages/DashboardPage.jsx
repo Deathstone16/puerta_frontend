@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Icon from '../components/Icons'
 import MercadoPagoConnect from '../components/MercadoPagoConnect'
 import NocheFormModal from '../components/NocheFormModal'
+import PriceBreakdownModal from '../components/PriceBreakdownModal'
 import RrppFormModal from '../components/RrppFormModal'
 import AsignarRrppModal from '../components/AsignarRrppModal'
 import { useAuth } from '../context/AuthContext'
@@ -34,6 +35,7 @@ export default function DashboardPage() {
   const [aforoStatus, setAforoStatus] = useState('loading')
   const [recaudacion, setRecaudacion] = useState(null)
   const [modalState, setModalState] = useState({ type: null, data: null })
+  const [breakdownData, setBreakdownData] = useState(null)
 
   // --- Data fetching: boliche + eventos on mount ---
   useEffect(() => {
@@ -217,7 +219,13 @@ export default function DashboardPage() {
         onClose={closeModal}
         evento={modalState.type === 'noche-edit' ? modalState.data : null}
         bolicheId={boliche?.id}
-        onSuccess={refreshEventos}
+        onSuccess={(createdData) => {
+          refreshEventos()
+          // Show breakdown popup after creating (not editing)
+          if (modalState.type === 'noche-create' && createdData?.priceData) {
+            setBreakdownData(createdData)
+          }
+        }}
       />
       <RrppFormModal
         open={modalState.type === 'rrpp-create'}
@@ -228,6 +236,12 @@ export default function DashboardPage() {
         open={modalState.type === 'rrpp-assign'}
         onClose={closeModal}
         eventos={eventos}
+      />
+      <PriceBreakdownModal
+        open={Boolean(breakdownData)}
+        onClose={() => setBreakdownData(null)}
+        priceData={breakdownData?.priceData}
+        eventoNombre={breakdownData?.nombre}
       />
     </main>
   )

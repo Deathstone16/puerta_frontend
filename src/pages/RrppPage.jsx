@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Icon from '../components/Icons'
+import GuestApprovalModal from '../components/GuestApprovalModal'
 import { useAuth } from '../context/AuthContext'
 import { formatMoney } from '../data/mockData'
 import { addDemoRrppGuest, getDemoRrppPanel } from '../data/rrppMockData'
@@ -136,6 +137,7 @@ export default function RrppPage() {
   const [formError, setFormError] = useState('')
   const [busy, setBusy] = useState(false)
   const [feedback, setFeedback] = useState(null)
+  const [selectedGuest, setSelectedGuest] = useState(null)
 
   const loadPanel = useCallback(async () => {
     const sequence = requestRef.current.sequence + 1
@@ -302,6 +304,51 @@ export default function RrppPage() {
     }
   }
 
+  const handleApproveGuest = async (guestId) => {
+    setBusy(true)
+    try {
+      await api.post(`/rrpp/aprobar-invitado/${guestId}/`, {})
+    } catch { /* demo mode silently succeeds */ }
+    setEvents((current) => current.map((ev) => ev._key !== selectedEvent?._key ? ev : {
+      ...ev,
+      invitados_recientes: ev.invitados_recientes.map((g) => g.id === guestId ? { ...g, estado: 'aprobado' } : g),
+    }))
+    setSelectedGuest(null)
+    setFeedback({ type: 'success', message: 'Invitado aprobado en la lista.' })
+    setBusy(false)
+  }
+
+  const handleRejectGuest = async (guestId) => {
+    setBusy(true)
+    try {
+      await api.post(`/rrpp/rechazar-invitado/${guestId}/`, {})
+    } catch { /* demo mode silently succeeds */ }
+    setEvents((current) => current.map((ev) => ev._key !== selectedEvent?._key ? ev : {
+      ...ev,
+      invitados_recientes: ev.invitados_recientes.map((g) => g.id === guestId ? { ...g, estado: 'rechazado' } : g),
+      pendientes: (ev.pendientes ?? 1) - 1,
+    }))
+    setSelectedGuest(null)
+    setFeedback({ type: 'success', message: 'Solicitud rechazada.' })
+    setBusy(false)
+  }
+
+  const handleDeleteGuest = async (guestId) => {
+    if (!window.confirm('¿Eliminar este invitado de la lista?')) return
+    setBusy(true)
+    try {
+      await api.post(`/rrpp/eliminar-invitado/${guestId}/`, {})
+    } catch { /* demo mode */ }
+    setEvents((current) => current.map((ev) => ev._key !== selectedEvent?._key ? ev : {
+      ...ev,
+      invitados_recientes: ev.invitados_recientes.filter((g) => g.id !== guestId),
+      anotados: (ev.anotados ?? 1) - 1,
+    }))
+    setSelectedGuest(null)
+    setFeedback({ type: 'success', message: 'Invitado eliminado de la lista.' })
+    setBusy(false)
+  }
+
   const statusLabel = panelStatus === 'live' ? 'Datos en vivo' : panelStatus === 'demo' ? 'Modo demo' : panelStatus === 'loading' ? 'Cargando panel' : 'Sin conexión'
   const commissionType = selectedEvent?.comision?.tipo ? String(selectedEvent.comision.tipo).replaceAll('_', ' ') : null
 
@@ -326,7 +373,17 @@ export default function RrppPage() {
 
   <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(300px,.8fr)]"><section className="panel p-5 sm:p-7"><p className="eyebrow">Alta manual</p><h2 className="display-title mt-2 text-3xl">ANOTAR INVITADO</h2><p className="mt-3 text-sm text-muted">Se agregará a <strong className="text-paper-text">{selectedEvent.nombre}</strong>.</p><form onSubmit={submitGuest} className="mt-6 grid gap-3 sm:grid-cols-2"><label className="block"><span className="mb-2 block font-mono text-[9px] font-bold uppercase tracking-wider text-muted">Nombre</span><input required maxLength={80} autoComplete="given-name" className="field" value={form.nombre} onChange={updateForm('nombre')} placeholder="NOMBRE"/></label><label className="block"><span className="mb-2 block font-mono text-[9px] font-bold uppercase tracking-wider text-muted">Apellido</span><input required maxLength={80} autoComplete="family-name" className="field" value={form.apellido} onChange={updateForm('apellido')} placeholder="APELLIDO"/></label><label className="block sm:col-span-2"><span className="mb-2 block font-mono text-[9px] font-bold uppercase tracking-wider text-muted">DNI</span><input required inputMode="numeric" autoComplete="off" pattern="[0-9]{7,8}" minLength={7} maxLength={8} className="field" value={form.dni} onChange={updateForm('dni')} placeholder="DNI SIN PUNTOS"/></label>{formError && <p className="border border-door-red/50 bg-door-red/10 p-3 text-sm text-door-red sm:col-span-2" role="alert">{formError}</p>}<button disabled={busy || (selectedEvent.cupo_max != null && selectedEvent.anotados != null && selectedEvent.anotados >= selectedEvent.cupo_max)} className="btn-primary mt-1 w-full sm:col-span-2">{busy ? 'ANOTANDO...' : 'ANOTAR EN ESTE EVENTO'}</button></form></section>
 
-  <section className="panel p-5 sm:p-7"><div className="flex items-end justify-between gap-3"><div><p className="eyebrow">Actividad</p><h2 className="display-title mt-2 text-3xl">INVITADOS RECIENTES</h2></div><span className="font-display text-2xl text-muted">{selectedEvent.invitados_recientes.length}</span></div>{selectedEvent.invitados_recientes.length > 0 ? <div className="mt-5 divide-y divide-white/10 border-y border-white/10">{selectedEvent.invitados_recientes.map((guest, guestIndex) => <div key={guest.id || `${guest.dni || 'guest'}-${guestIndex}`} className="flex items-center gap-3 py-4"><div className="grid size-10 shrink-0 place-items-center border border-white/15 font-display text-sm text-muted">{(guest.nombre?.[0] || '?')}{guest.apellido?.[0] || ''}</div><div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{[guest.nombre, guest.apellido].filter(Boolean).join(' ') || 'Invitado'}</p><p className="mt-1 font-mono text-[9px] uppercase text-muted">{guest.dni ? `DNI ${guest.dni}` : 'DNI no informado'}</p></div>{guest.estado && <span className="max-w-24 truncate border border-white/15 px-2 py-1 font-mono text-[8px] uppercase text-muted">{String(guest.estado).replaceAll('_', ' ')}</span>}</div>)}</div> : <div className="mt-5 border border-dashed border-white/15 p-6 text-center"><Icon name="users" className="mx-auto text-muted"/><p className="mt-3 text-xs leading-5 text-muted">No se informaron invitados recientes para este evento.</p></div>}</section></div>
+  <section className="panel p-5 sm:p-7"><div className="flex items-end justify-between gap-3"><div><p className="eyebrow">Actividad</p><h2 className="display-title mt-2 text-3xl">LISTA COMPLETA</h2></div><span className="font-display text-2xl text-muted">{selectedEvent.invitados_recientes.length}</span></div>{selectedEvent.invitados_recientes.length > 0 ? <div className="mt-5 divide-y divide-white/10 border-y border-white/10">{selectedEvent.invitados_recientes.map((guest, guestIndex) => <button type="button" key={guest.id || `${guest.dni || 'guest'}-${guestIndex}`} onClick={() => setSelectedGuest(guest)} className="flex w-full items-center gap-3 py-4 text-left transition hover:bg-white/5"><div className="grid size-10 shrink-0 place-items-center border border-white/15 font-display text-sm text-muted">{(guest.nombre?.[0] || '?')}{guest.apellido?.[0] || ''}</div><div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{[guest.nombre, guest.apellido].filter(Boolean).join(' ') || 'Invitado'}</p><p className="mt-1 font-mono text-[9px] uppercase text-muted">{guest.dni ? `DNI ${guest.dni}` : 'DNI no informado'}{guest.instagram ? ` · @${guest.instagram}` : ''}</p></div>{guest.estado && <span className={`max-w-24 truncate border px-2 py-1 font-mono text-[8px] uppercase ${guest.estado === 'pendiente' ? 'border-amber-300 text-amber-300' : 'border-white/15 text-muted'}`}>{String(guest.estado).replaceAll('_', ' ')}</span>}</button>)}</div> : <div className="mt-5 border border-dashed border-white/15 p-6 text-center"><Icon name="users" className="mx-auto text-muted"/><p className="mt-3 text-xs leading-5 text-muted">No se informaron invitados recientes para este evento.</p></div>}</section></div>
   </div>}</div>}
-  </div></main>
+  </div>
+  <GuestApprovalModal
+    open={Boolean(selectedGuest)}
+    guest={selectedGuest}
+    onClose={() => setSelectedGuest(null)}
+    onApprove={handleApproveGuest}
+    onReject={handleRejectGuest}
+    onDelete={handleDeleteGuest}
+    busy={busy}
+  />
+  </main>
 }

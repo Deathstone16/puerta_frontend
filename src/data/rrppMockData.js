@@ -13,9 +13,9 @@ const INITIAL_RRPP_EVENTS = [
     rebotados: 4,
     comision: { tipo: 'por_ingreso', valor: 1500, acumulada: 142500 },
     invitados_recientes: [
-      { id: 'demo-1-1', nombre: 'Camila', apellido: 'Rojas', dni: '42148376', estado: 'pendiente', creado_en: '2026-05-14T20:42:00-03:00' },
-      { id: 'demo-1-2', nombre: 'Tomás', apellido: 'Méndez', dni: '39876541', estado: 'ingresado', creado_en: '2026-05-14T19:18:00-03:00' },
-      { id: 'demo-1-3', nombre: 'Lara', apellido: 'Paz', dni: '44012387', estado: 'pendiente', creado_en: '2026-05-14T18:51:00-03:00' },
+      { id: 'demo-1-1', nombre: 'Camila', apellido: 'Rojas', dni: '42148376', instagram: 'cami.rojas', estado: 'pendiente', creado_en: '2026-05-14T20:42:00-03:00' },
+      { id: 'demo-1-2', nombre: 'Tomás', apellido: 'Méndez', dni: '39876541', instagram: 'tomas_mdz', estado: 'ingresado', creado_en: '2026-05-14T19:18:00-03:00' },
+      { id: 'demo-1-3', nombre: 'Lara', apellido: 'Paz', dni: '44012387', instagram: 'larapaz99', estado: 'pendiente', creado_en: '2026-05-14T18:51:00-03:00' },
     ],
   },
   {

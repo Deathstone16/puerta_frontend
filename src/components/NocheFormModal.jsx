@@ -21,6 +21,7 @@ const EMPTY_FORM = {
   aforo_max: '',
   precio_base: '',
   line_up: '',
+  habilitar_lista: true,
 }
 
 function formFromEvento(evento) {
@@ -31,6 +32,7 @@ function formFromEvento(evento) {
     aforo_max: String(evento.aforo_max ?? ''),
     precio_base: String(evento.precio_base ?? ''),
     line_up: Array.isArray(evento.line_up) ? evento.line_up.join(', ') : (evento.line_up || ''),
+    habilitar_lista: evento.habilitar_lista !== false,
   }
 }
 
@@ -110,6 +112,7 @@ export default function NocheFormModal({ open, onClose, evento = null, bolicheId
       precio_base: Number(form.precio_base),
       line_up: form.line_up.split(',').map((s) => s.trim()).filter(Boolean),
       color_pulsera: 'amarilla', // fixed value — pulseras out of scope
+      habilitar_lista: form.habilitar_lista,
     }
 
     try {
@@ -118,7 +121,7 @@ export default function NocheFormModal({ open, onClose, evento = null, bolicheId
       } else {
         await api.post('/eventos/crear/', { ...payload, boliche_id: bolicheId })
       }
-      onSuccess()
+      onSuccess({ nombre: form.nombre.trim(), priceData: pricePreview })
       onClose()
     } catch (error) {
       if (error.status === 405) {
@@ -212,6 +215,23 @@ export default function NocheFormModal({ open, onClose, evento = null, bolicheId
               placeholder="DJ Alpha, DJ Beta, DJ Gamma"
               data-testid="input-lineup"
             />
+          </label>
+
+          {/* Habilitar lista */}
+          <label className="flex items-center gap-3 sm:col-span-2 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={form.habilitar_lista}
+              onChange={(e) => setForm((prev) => ({ ...prev, habilitar_lista: e.target.checked }))}
+              className="size-5 accent-uv"
+              data-testid="input-habilitar-lista"
+            />
+            <div>
+              <span className="font-mono text-xs font-bold uppercase">Habilitar lista RRPP</span>
+              <p className="text-[10px] text-[var(--color-text-muted)]">
+                Si no se habilita, solo se venden entradas anticipadas por web.
+              </p>
+            </div>
           </label>
         </div>
 

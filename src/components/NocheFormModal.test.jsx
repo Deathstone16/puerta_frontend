@@ -113,6 +113,7 @@ describe('NocheFormModal', () => {
           precio_base: 4000,
           line_up: ['DJ X', 'DJ Y'],
           color_pulsera: 'amarilla',
+          habilitar_lista: true,
         })
       })
     })

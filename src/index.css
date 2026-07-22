@@ -5,11 +5,26 @@
 @tailwind utilities;
 
 @layer base {
-  :root { color-scheme: dark; }
-  * { @apply border-white/10; }
-  html { scroll-behavior: smooth; }
-  body { @apply m-0 min-w-[320px] bg-void font-body text-paper-text antialiased; }
-  body::before {
+  :root {
+    color-scheme: light;
+    --color-bg: #FFFFFF;
+    --color-surface: #F4F4F8;
+    --color-text: #1A1A2E;
+    --color-text-muted: #6B6B80;
+    --color-border: rgba(0,0,0,0.08);
+  }
+  .dark {
+    color-scheme: dark;
+    --color-bg: #0A0A10;
+    --color-surface: #141220;
+    --color-text: #EDF8F5;
+    --color-text-muted: #8A87A3;
+    --color-border: rgba(255,255,255,0.1);
+  }
+  * { @apply border-[var(--color-border)]; }
+  html { scroll-behavior: smooth; overflow-x: hidden; }
+  body { @apply m-0 min-w-[320px] bg-[var(--color-bg)] font-body text-[var(--color-text)] antialiased overflow-x-hidden; }
+  body.dark::before {
     content: '';
     position: fixed;
     inset: 0;
@@ -26,12 +41,12 @@
   .container-page { @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8; }
   .display-title { @apply font-display uppercase leading-[.88] tracking-[-0.04em]; }
   .eyebrow { @apply font-mono text-[10px] font-bold uppercase tracking-[.18em] text-strobe; }
-  .btn-primary { @apply inline-flex min-h-12 items-center justify-center gap-2 bg-uv px-5 font-mono text-xs font-bold uppercase tracking-wider text-white transition hover:bg-violet-500 focus:outline-none focus:ring-2 focus:ring-strobe focus:ring-offset-2 focus:ring-offset-void disabled:cursor-not-allowed disabled:opacity-50; }
-  .btn-secondary { @apply inline-flex min-h-12 items-center justify-center gap-2 border border-white/20 bg-white/[.04] px-5 font-mono text-xs font-bold uppercase tracking-wider text-paper-text transition hover:border-strobe/70 hover:text-strobe focus:outline-none focus:ring-2 focus:ring-strobe; }
-  .panel { @apply border border-white/10 bg-floor; }
-  .interface-panel { @apply rounded-interface border border-white/10 bg-floor; }
-  .field { @apply min-h-12 w-full rounded-none border border-white/15 bg-void px-4 font-mono text-sm text-paper-text outline-none transition placeholder:text-muted/60 focus:border-strobe; }
-  .ticket-edge { background-image: radial-gradient(circle at 0 50%, transparent 7px, #141220 8px), radial-gradient(circle at 100% 50%, transparent 7px, #141220 8px); background-position: left, right; background-size: 51% 100%; background-repeat: no-repeat; }
+  .btn-primary { @apply inline-flex min-h-12 items-center justify-center gap-2 bg-uv px-5 font-mono text-xs font-bold uppercase tracking-wider text-white transition hover:bg-violet-500 focus:outline-none focus:ring-2 focus:ring-strobe focus:ring-offset-2 focus:ring-offset-[var(--color-bg)] disabled:cursor-not-allowed disabled:opacity-50; }
+  .btn-secondary { @apply inline-flex min-h-12 items-center justify-center gap-2 border border-[var(--color-border)] bg-[var(--color-surface)] px-5 font-mono text-xs font-bold uppercase tracking-wider text-[var(--color-text)] transition hover:border-strobe/70 hover:text-strobe focus:outline-none focus:ring-2 focus:ring-strobe; }
+  .panel { @apply border border-[var(--color-border)] bg-[var(--color-surface)]; }
+  .interface-panel { @apply rounded-interface border border-[var(--color-border)] bg-[var(--color-surface)]; }
+  .field { @apply min-h-12 w-full rounded-none border border-[var(--color-border)] bg-[var(--color-bg)] px-4 font-mono text-sm text-[var(--color-text)] outline-none transition placeholder:text-[var(--color-text-muted)] placeholder:opacity-60 focus:border-strobe; }
+  .ticket-edge { background-image: radial-gradient(circle at 0 50%, transparent 7px, var(--color-surface) 8px), radial-gradient(circle at 100% 50%, transparent 7px, var(--color-surface) 8px); background-position: left, right; background-size: 51% 100%; background-repeat: no-repeat; }
   .scanlines { background-image: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,255,255,.025) 4px); }
   .status-dot { @apply inline-block size-2 rounded-full bg-emerald-400 shadow-[0_0_12px_#34d399]; }
   .guard-qr-reader { @apply size-full; }
