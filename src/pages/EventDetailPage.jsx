@@ -6,7 +6,7 @@ import { formatMoney, getEvent, normalizeEvent } from '../data/mockData'
 import { api } from '../lib/api'
 
 function ListForm({ event, onClose }) {
-  const [form, setForm] = useState({ nombre: '', apellido: '', dni: '' })
+  const [form, setForm] = useState({ nombre: '', apellido: '', dni: '', instagram: '' })
   const [state, setState] = useState('idle')
   const [message, setMessage] = useState('')
   const update = (key) => (e) => setForm((current) => ({ ...current, [key]: e.target.value }))
@@ -25,7 +25,7 @@ function ListForm({ event, onClose }) {
   }
 
   if (state === 'success') return (
-    <div className="py-6 text-center"><div className="mx-auto mb-5 grid size-16 place-items-center border-2 border-strobe text-strobe"><Icon name="check" size={34} /></div><p className="eyebrow mb-3">Solicitud registrada</p><h2 className="display-title text-4xl">ESTÁS EN LA LISTA</h2><p className="mt-4 text-sm leading-6 text-muted">Guardá tu DNI. La confirmación final se valida en la puerta.</p><button onClick={onClose} className="btn-primary mt-7 w-full">Listo</button></div>
+    <div className="py-6 text-center"><div className="mx-auto mb-5 grid size-16 place-items-center border-2 border-strobe text-strobe"><Icon name="check" size={34} /></div><p className="eyebrow mb-3">Solicitud enviada</p><h2 className="display-title text-4xl">SOLICITUD RECIBIDA</h2><p className="mt-4 text-sm leading-6 text-gray-500 dark:text-muted">El RRPP va a validar tu solicitud. Te confirmarán si estás en la lista.</p><button onClick={onClose} className="btn-primary mt-7 w-full">Listo</button></div>
   )
 
   return (
@@ -37,6 +37,7 @@ function ListForm({ event, onClose }) {
         <input required className="field" placeholder="NOMBRE" value={form.nombre} onChange={update('nombre')} />
         <input required className="field" placeholder="APELLIDO" value={form.apellido} onChange={update('apellido')} />
         <input required inputMode="numeric" pattern="[0-9]{7,9}" className="field sm:col-span-2" placeholder="DNI SIN PUNTOS" value={form.dni} onChange={update('dni')} />
+        <input className="field sm:col-span-2" placeholder="@tu.usuario de Instagram (opcional)" value={form.instagram} onChange={update('instagram')} />
       </div>
       {message && <p className="mt-3 text-xs text-door-red">{message}</p>}
       <button disabled={state === 'loading'} className="btn-primary mt-5 w-full">{state === 'loading' ? 'ANOTANDO...' : 'CONFIRMAR — ME ANOTO EN LA LISTA'}</button>
@@ -83,7 +84,7 @@ export default function EventDetailPage() {
           <h3 className="mt-7 font-mono text-[10px] font-bold uppercase tracking-[.18em] text-muted">Elegí tu combo</h3>
           <div className="mt-3 grid gap-2">{[['entrada','SOLO ENTRADA',0],['tragos','ENTRADA + 2 TRAGOS',2500]].map(([value,label,extra]) => <label key={value} className={`flex cursor-pointer items-center justify-between border p-4 transition ${combo === value ? 'border-strobe bg-strobe/5' : 'border-white/15 hover:border-white/30'}`}><span className="flex items-center gap-3"><input type="radio" name="combo" checked={combo === value} onChange={() => setCombo(value)} className="accent-cyan-400"/><span className="font-mono text-xs font-bold">{label}</span></span><span className="font-mono text-xs text-muted">{extra ? `+${formatMoney(extra)}` : 'INCLUIDO'}</span></label>)}</div>
           <Link to={`/checkout/${event.slug}`} state={{ priceType, combo, total: base }} className="btn-primary mt-5 w-full">COMPRAR COMBO — {formatMoney(base)} <Icon name="arrow" size={17}/></Link>
-          <button onClick={() => setModalOpen(true)} className="btn-secondary mt-3 w-full">SUMARME A LA LISTA</button>
+          <button onClick={() => setModalOpen(true)} className={`btn-secondary mt-3 w-full${event.habilitar_lista === false ? ' hidden' : ''}`}>SUMARME A LA LISTA</button>
         </aside>
       </div></section>
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} label="Sumarme a la lista"><ListForm event={event} onClose={() => setModalOpen(false)} /></Modal>

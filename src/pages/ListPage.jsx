@@ -14,7 +14,7 @@ export default function ListPage() {
   useEffect(() => { api.get(`/lista/${slug}/`).then(setData).catch(() => {}) }, [slug])
 
   const event = { ...getEvent(data.evento?.slug || data.evento?.id), ...(data.evento || {}) }
-  const hasLista = data.link_activo !== false
+  const hasLista = data.link_activo !== false && data.evento?.habilitar_lista !== false
 
   const update = (key) => (e) => setForm((current) => ({ ...current, [key]: e.target.value }))
 

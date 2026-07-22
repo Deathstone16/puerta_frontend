@@ -245,7 +245,7 @@ export default function RrppPage() {
       return
     }
     const payload = {
-      evento_id: selectedEvent.id,
+      slug_lista: selectedEvent.slug || selectedEvent.links?.[0]?.slug || '',
       nombre: form.nombre.trim(),
       apellido: form.apellido.trim(),
       dni: form.dni,

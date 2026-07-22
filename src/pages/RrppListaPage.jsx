@@ -80,7 +80,9 @@ export default function RrppListaPage() {
     if (!addForm.nombre.trim() || !addForm.apellido.trim() || !/^\d{7,8}$/.test(addForm.dni)) return
     setBusy(true)
     try {
-      const result = await api.post('/rrpp/anotar-invitado/', { evento_id: Number(eventoId), ...addForm })
+      // Use slug from event links for the anotar endpoint
+      const slug = evento?.links?.[0]?.slug || evento?.slug || ''
+      const result = await api.post('/rrpp/anotar-invitado/', { slug_lista: slug, ...addForm })
       // Backend returns "pendiente" but RRPP added it manually → treat as "aprobado" in UI
       const newGuest = result?.invitado
         ? { ...result.invitado, estado: 'aprobado' }

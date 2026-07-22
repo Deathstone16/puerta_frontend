@@ -32,7 +32,7 @@ export default function CheckoutPage() {
     const purchase = { event, buyer, choice, amounts }
     setSelection(purchase)
     try {
-      const data = await api.post('/pagos/preferencial/', { evento_id: event.id, ...buyer })
+      const data = await api.post('/pagos/preferencia/', { evento_id: event.id, ...buyer })
       if (data?.init_point) window.location.assign(data.init_point)
       else navigate('/procesando', { state: { token: data?.token } })
     } catch (apiError) {
