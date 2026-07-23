@@ -94,11 +94,19 @@ export default function EventoRrppAssigner({ eventoId, eventoNombre, onClose }) 
         valor_comision: Number(comisionForm.valor),
       })
       setAssigned((prev) => [...prev, { ...pendingRrpp, _comision: { tipo: comisionForm.tipo, valor: comisionForm.valor } }])
-      setSuccessMsg(`${result.rrpp_nombre || pendingRrpp.nombre} asignado con éxito a ${eventoNombre}`)
+      setSuccessMsg(result.ya_asignado
+        ? `${pendingRrpp.nombre} ya estaba asignado a ${eventoNombre}`
+        : `${result.rrpp_nombre || pendingRrpp.nombre} asignado con éxito a ${eventoNombre}`)
       setPendingRrpp(null)
       setComisionForm({ tipo: 'fijo', valor: '' })
-    } catch {
-      // silently fail
+      loadData()
+    } catch (error) {
+      const detail = error.data?.detail || error.data?.error || error.message || 'No se pudo asignar'
+      setSuccessMsg('')
+      setPendingRrpp(null)
+      setComisionForm({ tipo: 'fijo', valor: '' })
+      // Show error briefly in a simple alert — could improve later
+      window.alert(detail)
     } finally {
       setBusy(false)
     }
@@ -183,7 +191,7 @@ export default function EventoRrppAssigner({ eventoId, eventoNombre, onClose }) 
       {pendingRrpp && (
         <div className="mb-3 border border-uv/30 bg-uv/5 p-3">
           <p className="mb-2 font-mono text-[9px] font-bold uppercase tracking-wider text-gray-500 dark:text-muted">
-            Comisión para <span className="text-strobe">{pendingRrpp.nombre}</span>
+            Comisión para <span className="text-strobe">{pendingRrpp.nombre}</span> <span className="text-door-red">*</span>
           </p>
           <div className="flex flex-wrap items-end gap-2">
             <select

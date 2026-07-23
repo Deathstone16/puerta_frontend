@@ -30,10 +30,10 @@ export default function DashboardPage() {
   const [modalState, setModalState] = useState({ type: null, data: null })
   const [breakdownData, setBreakdownData] = useState(null)
 
-  // Fetch eventos on mount
+  // Fetch eventos on mount (only mine)
   useEffect(() => {
     let active = true
-    api.get('/eventos/')
+    api.get('/eventos/?mis_eventos=true')
       .then((e) => { if (active) setEventos(Array.isArray(e) ? e : []) })
       .catch(() => { if (active) setEventos([]) })
     return () => { active = false }
@@ -83,7 +83,7 @@ export default function DashboardPage() {
   // Refresh helpers
   const refreshEventos = useCallback(async () => {
     try {
-      const e = await api.get('/eventos/')
+      const e = await api.get('/eventos/?mis_eventos=true')
       if (Array.isArray(e)) setEventos(e)
     } catch { /* retain current */ }
   }, [])
