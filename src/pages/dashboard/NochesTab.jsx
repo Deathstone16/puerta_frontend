@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import Icon from '../../components/Icons'
+import EventoRrppAssigner from '../../components/EventoRrppAssigner'
 import { formatMoney } from '../../lib/format'
 
 /**
- * NochesTab — Event list with estado-colored left borders and action buttons.
+ * NochesTab — Event list with estado-colored left borders, action buttons, and RRPP assignment.
  *
  * Props:
  *   eventos: Evento[] — list of owner's events
@@ -12,9 +14,9 @@ import { formatMoney } from '../../lib/format'
  */
 
 function getEstadoBorderColor(estado) {
-  if (estado === 'publicado' || estado === 'activo') return '#8B5CF6' // uv
-  if (estado === 'cancelado') return '#E23B5A' // door-red
-  return '#8A87A3' // muted
+  if (estado === 'publicado' || estado === 'activo') return '#8B5CF6'
+  if (estado === 'cancelado') return '#E23B5A'
+  return '#8A87A3'
 }
 
 function getEstadoBadge(estado) {
@@ -37,6 +39,12 @@ function formatDate(isoDate) {
 }
 
 export default function NochesTab({ eventos = [], onEdit, onCancel, onCreate }) {
+  const [expandedId, setExpandedId] = useState(null)
+
+  const toggleExpand = (id) => {
+    setExpandedId((current) => current === id ? null : id)
+  }
+
   return (
     <div data-testid="noches-tab">
       {/* Header with create button */}
@@ -64,60 +72,79 @@ export default function NochesTab({ eventos = [], onEdit, onCancel, onCreate }) 
           {eventos.map((evento) => {
             const badge = getEstadoBadge(evento.estado)
             const borderColor = getEstadoBorderColor(evento.estado)
+            const isExpanded = expandedId === evento.id
 
             return (
-              <article
-                key={evento.id}
-                className="flex items-center gap-4 border border-gray-200 bg-gray-50 p-4 transition hover:border-gray-300 dark:border-white/10 dark:bg-floor dark:hover:border-white/20"
-                style={{ borderLeftWidth: '4px', borderLeftColor: borderColor }}
-                data-testid="evento-card"
-              >
-                {/* Event info */}
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-3">
-                    <h3 className="truncate font-display text-xl uppercase text-gray-900 dark:text-paper-text">{evento.nombre}</h3>
-                    <span className={`shrink-0 border px-2 py-0.5 font-mono text-[9px] font-bold uppercase ${badge.className}`}>
-                      {badge.label}
-                    </span>
+              <div key={evento.id} className="overflow-hidden border border-gray-200 dark:border-white/10" style={{ borderLeftWidth: '4px', borderLeftColor: borderColor }}>
+                <article
+                  className="flex items-center gap-4 bg-gray-50 p-4 transition hover:bg-gray-100 dark:bg-floor dark:hover:bg-white/[.02]"
+                  data-testid="evento-card"
+                >
+                  {/* Event info */}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-3">
+                      <h3 className="truncate font-display text-xl uppercase text-gray-900 dark:text-paper-text">{evento.nombre}</h3>
+                      <span className={`shrink-0 border px-2 py-0.5 font-mono text-[9px] font-bold uppercase ${badge.className}`}>
+                        {badge.label}
+                      </span>
+                    </div>
+                    <p className="mt-2 font-mono text-[10px] uppercase tracking-wider text-gray-500 dark:text-muted">
+                      {formatDate(evento.fecha)}
+                    </p>
                   </div>
-                  <p className="mt-2 font-mono text-[10px] uppercase tracking-wider text-gray-500 dark:text-muted">
-                    {formatDate(evento.fecha)}
-                  </p>
-                </div>
 
-                {/* Stats */}
-                <div className="hidden items-center gap-5 sm:flex">
-                  <div className="text-right">
-                    <p className="font-mono text-xs font-bold text-strobe">{formatMoney(evento.precio_publicado)}</p>
-                    <p className="font-mono text-[9px] text-gray-500 dark:text-muted">publicado</p>
+                  {/* Stats */}
+                  <div className="hidden items-center gap-5 sm:flex">
+                    <div className="text-right">
+                      <p className="font-mono text-xs font-bold text-strobe">{formatMoney(evento.precio_publicado)}</p>
+                      <p className="font-mono text-[9px] text-gray-500 dark:text-muted">publicado</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-mono text-xs font-bold text-gray-900 dark:text-paper-text">{evento.aforo_max}</p>
+                      <p className="font-mono text-[9px] text-gray-500 dark:text-muted">aforo</p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-mono text-xs font-bold text-gray-900 dark:text-paper-text">{evento.aforo_max}</p>
-                    <p className="font-mono text-[9px] text-gray-500 dark:text-muted">aforo</p>
-                  </div>
-                </div>
 
-                {/* Actions */}
-                <div className="flex shrink-0 items-center gap-1">
-                  <button
-                    onClick={() => onEdit(evento)}
-                    className="grid size-10 place-items-center border border-gray-200 text-gray-400 transition hover:border-strobe hover:text-strobe dark:border-white/15 dark:text-muted"
-                    aria-label={`Editar ${evento.nombre}`}
-                    data-testid="editar-btn"
-                  >
-                    <Icon name="edit" size={16} />
-                  </button>
-                  <button
-                    onClick={() => onCancel(evento.id)}
-                    disabled={evento.estado === 'cancelado'}
-                    className="grid size-10 place-items-center border border-gray-200 text-gray-400 transition hover:border-door-red hover:text-door-red disabled:cursor-not-allowed disabled:opacity-30 dark:border-white/15 dark:text-muted"
-                    aria-label={`Cancelar ${evento.nombre}`}
-                    data-testid="cancelar-btn"
-                  >
-                    <Icon name="close" size={16} />
-                  </button>
-                </div>
-              </article>
+                  {/* Actions */}
+                  <div className="flex shrink-0 items-center gap-1">
+                    <button
+                      onClick={() => toggleExpand(evento.id)}
+                      className={`grid size-10 place-items-center border transition ${isExpanded ? 'border-strobe bg-strobe/10 text-strobe' : 'border-gray-200 text-gray-400 hover:border-strobe hover:text-strobe dark:border-white/15 dark:text-muted'}`}
+                      aria-label={`RRPP de ${evento.nombre}`}
+                      title="Gestionar RRPP"
+                      data-testid="rrpp-btn"
+                    >
+                      <Icon name="users" size={16} />
+                    </button>
+                    <button
+                      onClick={() => onEdit(evento)}
+                      className="grid size-10 place-items-center border border-gray-200 text-gray-400 transition hover:border-strobe hover:text-strobe dark:border-white/15 dark:text-muted"
+                      aria-label={`Editar ${evento.nombre}`}
+                      data-testid="editar-btn"
+                    >
+                      <Icon name="edit" size={16} />
+                    </button>
+                    <button
+                      onClick={() => onCancel(evento.id)}
+                      disabled={evento.estado === 'cancelado'}
+                      className="grid size-10 place-items-center border border-gray-200 text-gray-400 transition hover:border-door-red hover:text-door-red disabled:cursor-not-allowed disabled:opacity-30 dark:border-white/15 dark:text-muted"
+                      aria-label={`Cancelar ${evento.nombre}`}
+                      data-testid="cancelar-btn"
+                    >
+                      <Icon name="close" size={16} />
+                    </button>
+                  </div>
+                </article>
+
+                {/* Expanded: RRPP assignment panel */}
+                {isExpanded && evento.estado !== 'cancelado' && (
+                  <EventoRrppAssigner
+                    eventoId={evento.id}
+                    eventoNombre={evento.nombre}
+                    onClose={() => setExpandedId(null)}
+                  />
+                )}
+              </div>
             )
           })}
         </div>

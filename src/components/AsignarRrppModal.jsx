@@ -131,7 +131,7 @@ export default function AsignarRrppModal({ open, onClose, eventos = [] }) {
                 data-testid="select-evento"
               >
                 <option value="">Seleccionar evento...</option>
-                {eventos.filter((ev) => ev.estado === 'publicado').map((ev) => (
+                {eventos.filter((ev) => ev.estado !== 'cancelado').map((ev) => (
                   <option key={ev.id} value={ev.id}>{ev.nombre}</option>
                 ))}
               </select>

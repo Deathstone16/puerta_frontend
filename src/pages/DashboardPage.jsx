@@ -10,10 +10,12 @@ import { api } from '../lib/api'
 import MetricasTab from './dashboard/MetricasTab'
 import NochesTab from './dashboard/NochesTab'
 import AuditoriaRrppTab from './dashboard/AuditoriaRrppTab'
+import GestionRrppTab from './dashboard/GestionRrppTab'
 
 const TABS = [
   { id: 'metricas', label: 'Métricas' },
   { id: 'noches', label: 'Noches' },
+  { id: 'rrpp', label: 'Mis RRPP' },
   { id: 'auditoria', label: 'Auditoría RRPP' },
 ]
 
@@ -174,6 +176,12 @@ export default function DashboardPage() {
           onEdit={(evento) => openModal('noche-edit', evento)}
           onCancel={handleCancel}
           onCreate={() => openModal('noche-create')}
+        />
+      )}
+      {activeTab === 'rrpp' && (
+        <GestionRrppTab
+          onCreateRrpp={() => openModal('rrpp-create')}
+          onAsignarRrpp={() => openModal('rrpp-assign')}
         />
       )}
       {activeTab === 'auditoria' && (

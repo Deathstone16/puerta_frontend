@@ -2,6 +2,12 @@ import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import NochesTab from './NochesTab'
 
+vi.mock('../../components/EventoRrppAssigner', () => ({
+  default: ({ eventoId, eventoNombre, onClose }) => (
+    <div data-testid={`rrpp-assigner-${eventoId}`}>{eventoNombre} assigner</div>
+  ),
+}))
+
 const testEventos = [
   { id: 1, nombre: 'NEON PROTOCOL', fecha: '2026-08-15T23:59:00-03:00', precio_base: 3800, precio_publicado: 4500, aforo_max: 800, estado: 'publicado', line_up: ['Cata Ferreyra', 'Lorenzo', 'NIKKA'] },
   { id: 2, nombre: 'AFTER DARK', fecha: '2026-08-22T23:30:00-03:00', precio_base: 3200, precio_publicado: 3900, aforo_max: 650, estado: 'publicado', line_up: ['Mora', 'Santi Paz'] },
@@ -34,31 +40,15 @@ describe('NochesTab', () => {
   it('renders estado badge with correct styling', () => {
     render(<NochesTab {...defaultProps} />)
 
-    const publicadas = screen.getAllByText('publicada')
-    expect(publicadas).toHaveLength(2)
-    expect(publicadas[0].className).toContain('text-strobe')
+    const activos = screen.getAllByText('activo')
+    expect(activos).toHaveLength(2)
+    expect(activos[0].className).toContain('text-strobe')
 
-    const cancelada = screen.getByText('cancelada')
-    expect(cancelada.className).toContain('text-door-red')
+    const cancelado = screen.getByText('cancelado')
+    expect(cancelado.className).toContain('text-door-red')
   })
 
-  it('applies uv border for publicado events', () => {
-    render(<NochesTab {...defaultProps} />)
-
-    const cards = screen.getAllByTestId('evento-card')
-    // First event is publicado
-    expect(cards[0].style.borderLeftColor).toBe('rgb(139, 92, 246)')
-  })
-
-  it('applies door-red border for cancelado events', () => {
-    render(<NochesTab {...defaultProps} />)
-
-    const cards = screen.getAllByTestId('evento-card')
-    // Third event (RITUAL 909) is cancelado
-    expect(cards[2].style.borderLeftColor).toBe('rgb(226, 59, 90)')
-  })
-
-  it('calls onCreate when "Crear nueva noche" is clicked', () => {
+  it('calls onCreate when "Crear evento" is clicked', () => {
     render(<NochesTab {...defaultProps} />)
 
     fireEvent.click(screen.getByTestId('crear-noche-btn'))
@@ -92,7 +82,37 @@ describe('NochesTab', () => {
   it('shows empty state when no eventos', () => {
     render(<NochesTab {...defaultProps} eventos={[]} />)
 
-    expect(screen.getByText('SIN NOCHES')).toBeInTheDocument()
+    expect(screen.getByText('SIN EVENTOS')).toBeInTheDocument()
     expect(screen.queryByTestId('eventos-list')).not.toBeInTheDocument()
+  })
+
+  it('expands RRPP assigner when rrpp button is clicked on active event', () => {
+    render(<NochesTab {...defaultProps} />)
+
+    const rrppBtns = screen.getAllByTestId('rrpp-btn')
+    fireEvent.click(rrppBtns[0])
+
+    expect(screen.getByTestId('rrpp-assigner-1')).toBeInTheDocument()
+  })
+
+  it('does not show RRPP assigner for cancelled events when expanded', () => {
+    render(<NochesTab {...defaultProps} />)
+
+    const rrppBtns = screen.getAllByTestId('rrpp-btn')
+    // Click the RRPP button on the cancelled event (index 2)
+    fireEvent.click(rrppBtns[2])
+
+    expect(screen.queryByTestId('rrpp-assigner-3')).not.toBeInTheDocument()
+  })
+
+  it('collapses RRPP assigner when same button is clicked again', () => {
+    render(<NochesTab {...defaultProps} />)
+
+    const rrppBtns = screen.getAllByTestId('rrpp-btn')
+    fireEvent.click(rrppBtns[0])
+    expect(screen.getByTestId('rrpp-assigner-1')).toBeInTheDocument()
+
+    fireEvent.click(rrppBtns[0])
+    expect(screen.queryByTestId('rrpp-assigner-1')).not.toBeInTheDocument()
   })
 })

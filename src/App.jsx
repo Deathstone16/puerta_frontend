@@ -12,7 +12,6 @@ import AdminPage from './pages/AdminPage'
 import RrppListaPage from './pages/RrppListaPage'
 import GuardPage from './pages/GuardPage'
 import EventDetailPage from './pages/EventDetailPage'
-import HomePage from './pages/HomePage'
 import ListPage from './pages/ListPage'
 import LoginPage from './pages/LoginPage'
 import NotFoundPage from './pages/NotFoundPage'
@@ -25,40 +24,47 @@ export default function App() {
     <AuthProvider>
       <PurchaseProvider>
         <Routes>
+          {/* Public routes (buyers need these) */}
           <Route element={<PublicLayout />}>
-            <Route path="/" element={<HomePage />} />
+            <Route path="/login" element={<LoginPage />} />
             <Route path="/evento/:id" element={<EventDetailPage />} />
             <Route path="/checkout/:id" element={<CheckoutPage />} />
             <Route path="/procesando" element={<PaymentProcessingPage />} />
             <Route path="/wallet/:token" element={<WalletPage />} />
             <Route path="/lista/:slug" element={<ListPage />} />
-            <Route path="/login" element={<LoginPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
 
+          {/* Owner dashboard */}
           <Route element={<ProtectedRoute roles={['dueno']} />}>
             <Route element={<OwnerShell />}>
               <Route path="/dashboard" element={<DashboardPage />} />
             </Route>
           </Route>
 
+          {/* RRPP */}
           <Route element={<ProtectedRoute roles={['rrpp']} />}>
             <Route path="/rrpp" element={<RrppPage />} />
             <Route path="/rrpp/lista/:eventoId" element={<RrppListaPage />} />
           </Route>
 
+          {/* Guard */}
           <Route element={<ProtectedRoute roles={['guardia']} />}>
             <Route path="/guardia" element={<GuardPage />} />
           </Route>
 
+          {/* Cashier */}
           <Route element={<ProtectedRoute roles={['cajera']} />}>
             <Route path="/cajera" element={<CashierPage />} />
           </Route>
 
+          {/* Superadmin */}
           <Route element={<ProtectedRoute roles={['superadmin']} />}>
             <Route path="/admin" element={<AdminPage />} />
           </Route>
 
+          {/* Redirects */}
+          <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/dueno" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </PurchaseProvider>

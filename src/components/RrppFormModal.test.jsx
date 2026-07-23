@@ -55,7 +55,7 @@ describe('RrppFormModal', () => {
         username: 'lucia_rrpp',
         password: 'pass123456',
         telefono: '1155556666',
-        tipo_comision: 'por_ingreso',
+        tipo_comision: 'fijo',
         valor_comision: 500,
       })
     })

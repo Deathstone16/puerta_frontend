@@ -10,6 +10,7 @@ vi.mock('../lib/api', () => ({
     get: vi.fn(),
     post: vi.fn(),
     patch: vi.fn(),
+    delete: vi.fn(),
   },
   ApiError: class extends Error {
     constructor(msg, status, data) { super(msg); this.status = status; this.data = data }
@@ -49,27 +50,33 @@ function renderAdmin() {
 }
 
 describe('AdminPage', () => {
-  beforeEach(() => vi.clearAllMocks())
+  beforeEach(() => {
+    vi.clearAllMocks()
+    // Mock both API calls: metricas + organizadores
+    api.get.mockImplementation((path) => {
+      if (path.includes('/admin/metricas')) return Promise.resolve(testAdminData)
+      if (path.includes('/admin/organizadores')) return Promise.resolve([])
+      return Promise.resolve(null)
+    })
+  })
 
   it('renders header with ADMIN branding', async () => {
-    api.get.mockResolvedValueOnce(testAdminData)
     renderAdmin()
 
     await waitFor(() => {
-      expect(screen.getByText('ADMIN NORWARE')).toBeInTheDocument()
+      expect(screen.getByText('ADMIN NORDEV')).toBeInTheDocument()
       expect(screen.getByText('Superadmin')).toBeInTheDocument()
     })
   })
 
   it('shows loading state initially', () => {
-    api.get.mockReturnValue(new Promise(() => {})) // never resolves
+    api.get.mockReturnValue(new Promise(() => {}))
     renderAdmin()
 
     expect(screen.getByTestId('admin-loading')).toBeInTheDocument()
   })
 
   it('renders 4 KPI cards with data from API', async () => {
-    api.get.mockResolvedValueOnce(testAdminData)
     renderAdmin()
 
     await waitFor(() => {
@@ -79,7 +86,6 @@ describe('AdminPage', () => {
   })
 
   it('displays correct KPI values', async () => {
-    api.get.mockResolvedValueOnce(testAdminData)
     renderAdmin()
 
     await waitFor(() => {
@@ -90,7 +96,6 @@ describe('AdminPage', () => {
   })
 
   it('renders events table with rows', async () => {
-    api.get.mockResolvedValueOnce(testAdminData)
     renderAdmin()
 
     await waitFor(() => {
@@ -100,7 +105,6 @@ describe('AdminPage', () => {
   })
 
   it('renders estado badges with correct colors', async () => {
-    api.get.mockResolvedValueOnce(testAdminData)
     renderAdmin()
 
     await waitFor(() => {
@@ -114,7 +118,6 @@ describe('AdminPage', () => {
   })
 
   it('table container has overflow-x-auto for mobile', async () => {
-    api.get.mockResolvedValueOnce(testAdminData)
     renderAdmin()
 
     await waitFor(() => {
@@ -123,7 +126,6 @@ describe('AdminPage', () => {
   })
 
   it('renders logout button', async () => {
-    api.get.mockResolvedValueOnce(testAdminData)
     renderAdmin()
 
     await waitFor(() => {

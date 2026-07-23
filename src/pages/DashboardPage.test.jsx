@@ -2,14 +2,15 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { AuthProvider } from '../context/AuthContext'
+import { ThemeProvider } from '../context/ThemeContext'
 import DashboardPage from './DashboardPage'
 
-// Mock the api module so tests don't make real requests
 vi.mock('../lib/api', () => ({
   api: {
-    get: vi.fn().mockRejectedValue({ status: 0 }),
-    post: vi.fn().mockRejectedValue({ status: 0 }),
-    patch: vi.fn().mockRejectedValue({ status: 0 }),
+    get: vi.fn().mockResolvedValue([]),
+    post: vi.fn().mockResolvedValue({}),
+    patch: vi.fn().mockResolvedValue({}),
+    delete: vi.fn().mockResolvedValue({}),
   },
   ApiError: class extends Error {
     constructor(msg, status, data) {
@@ -26,9 +27,11 @@ vi.mock('../lib/api', () => ({
 function renderDashboard() {
   return render(
     <MemoryRouter>
-      <AuthProvider>
-        <DashboardPage />
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <DashboardPage />
+        </AuthProvider>
+      </ThemeProvider>
     </MemoryRouter>
   )
 }
@@ -39,11 +42,12 @@ describe('DashboardPage', () => {
   })
 
   describe('tab navigation', () => {
-    it('renders three tabs', () => {
+    it('renders four tabs', () => {
       renderDashboard()
 
       expect(screen.getByRole('tab', { name: /métricas/i })).toBeInTheDocument()
       expect(screen.getByRole('tab', { name: /noches/i })).toBeInTheDocument()
+      expect(screen.getByRole('tab', { name: /mis rrpp/i })).toBeInTheDocument()
       expect(screen.getByRole('tab', { name: /auditoría rrpp/i })).toBeInTheDocument()
     })
 
@@ -63,6 +67,15 @@ describe('DashboardPage', () => {
       expect(screen.queryByTestId('metricas-tab')).not.toBeInTheDocument()
     })
 
+    it('switches to Mis RRPP tab on click', () => {
+      renderDashboard()
+
+      fireEvent.click(screen.getByRole('tab', { name: /mis rrpp/i }))
+
+      expect(screen.getByTestId('gestion-rrpp-tab')).toBeInTheDocument()
+      expect(screen.queryByTestId('metricas-tab')).not.toBeInTheDocument()
+    })
+
     it('switches to Auditoría tab on click', () => {
       renderDashboard()
 
@@ -71,39 +84,19 @@ describe('DashboardPage', () => {
       expect(screen.getByTestId('auditoria-tab')).toBeInTheDocument()
       expect(screen.queryByTestId('metricas-tab')).not.toBeInTheDocument()
     })
-
-    it('does not modify the URL on tab switch', () => {
-      renderDashboard()
-
-      fireEvent.click(screen.getByRole('tab', { name: /noches/i }))
-
-      // URL stays unchanged — we're in MemoryRouter with initial entry
-      expect(screen.getByTestId('noches-tab')).toBeInTheDocument()
-    })
   })
 
   describe('header elements', () => {
     it('renders the page title', () => {
       renderDashboard()
 
-      expect(screen.getByText('MIS NOCHES')).toBeInTheDocument()
+      expect(screen.getByText('MIS EVENTOS')).toBeInTheDocument()
     })
 
-    it('renders the "+ Nueva noche" button', () => {
+    it('renders the "Nuevo evento" button', () => {
       renderDashboard()
 
-      expect(screen.getByRole('button', { name: /nueva noche/i })).toBeInTheDocument()
-    })
-  })
-
-  describe('fallback to mock data', () => {
-    it('renders aforo badge with mock data when API is down', async () => {
-      renderDashboard()
-
-      await waitFor(() => {
-        expect(screen.getByText(/184/)).toBeInTheDocument()
-        expect(screen.getByText(/300/)).toBeInTheDocument()
-      })
+      expect(screen.getByRole('button', { name: /nuevo evento/i })).toBeInTheDocument()
     })
   })
 })

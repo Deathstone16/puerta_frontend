@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
+import { ThemeProvider } from '../../context/ThemeContext'
 import MetricasTab from './MetricasTab'
 
 vi.mock('recharts', async () => {
@@ -11,7 +12,7 @@ vi.mock('recharts', async () => {
 })
 
 vi.mock('../../lib/api', () => ({
-  api: { get: vi.fn(), post: vi.fn() },
+  api: { get: vi.fn(), post: vi.fn(), delete: vi.fn() },
 }))
 
 import { api } from '../../lib/api'
@@ -28,6 +29,14 @@ const testRecaudacion = {
   transferencia: { cantidad: 0, monto: 0 },
 }
 
+function renderMetricas(props = {}) {
+  return render(
+    <ThemeProvider>
+      <MetricasTab eventos={testEventos} {...props} />
+    </ThemeProvider>
+  )
+}
+
 describe('MetricasTab', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -35,7 +44,7 @@ describe('MetricasTab', () => {
   })
 
   it('renders 4 KPI cards', async () => {
-    render(<MetricasTab eventos={testEventos} />)
+    renderMetricas()
 
     await waitFor(() => {
       const cards = screen.getAllByTestId('kpi-card')
@@ -44,7 +53,7 @@ describe('MetricasTab', () => {
   })
 
   it('shows empty state when no sales', async () => {
-    render(<MetricasTab eventos={testEventos} />)
+    renderMetricas()
 
     await waitFor(() => {
       expect(screen.getByTestId('metricas-empty')).toBeInTheDocument()
@@ -53,7 +62,7 @@ describe('MetricasTab', () => {
 
   it('shows bar chart when there are sales', async () => {
     api.get.mockResolvedValue({ ...testRecaudacion, total_recaudado: 50000 })
-    render(<MetricasTab eventos={testEventos} />)
+    renderMetricas()
 
     await waitFor(() => {
       expect(screen.getByTestId('bar-chart')).toBeInTheDocument()
@@ -61,7 +70,7 @@ describe('MetricasTab', () => {
   })
 
   it('fetches recaudacion for each event', async () => {
-    render(<MetricasTab eventos={testEventos} />)
+    renderMetricas()
 
     await waitFor(() => {
       expect(api.get).toHaveBeenCalledWith('/dashboard/recaudacion/1/')
@@ -70,7 +79,11 @@ describe('MetricasTab', () => {
   })
 
   it('handles empty eventos gracefully', () => {
-    render(<MetricasTab eventos={[]} />)
+    render(
+      <ThemeProvider>
+        <MetricasTab eventos={[]} />
+      </ThemeProvider>
+    )
 
     const cards = screen.getAllByTestId('kpi-card')
     expect(cards).toHaveLength(4)
@@ -78,7 +91,7 @@ describe('MetricasTab', () => {
   })
 
   it('renders event selector with "Todas las noches" option', () => {
-    render(<MetricasTab eventos={testEventos} />)
+    renderMetricas()
 
     const select = screen.getByTestId('metricas-event-select')
     expect(select).toBeInTheDocument()
