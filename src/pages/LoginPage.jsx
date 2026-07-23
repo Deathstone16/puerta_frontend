@@ -29,53 +29,58 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen">
       {/* Left decorative panel — hidden on mobile */}
-      <div className="relative hidden w-1/2 overflow-hidden bg-void lg:block">
+      <div className="relative hidden w-1/2 overflow-hidden bg-gray-50 dark:bg-void lg:block">
         {/* Grid background */}
-        <div className="absolute inset-0 bg-club-grid bg-[size:32px_32px] opacity-40" />
+        <div
+          className="absolute inset-0 opacity-20 dark:opacity-40"
+          style={{ backgroundImage: 'radial-gradient(circle, rgba(139,92,246,0.15) 1px, transparent 1px)', backgroundSize: '32px 32px' }}
+        />
 
         {/* Gradient orbs */}
-        <div className="absolute -left-32 top-1/4 size-[500px] rounded-full bg-uv/20 blur-[150px]" />
-        <div className="absolute -right-20 bottom-1/4 size-[400px] rounded-full bg-strobe/15 blur-[120px]" />
+        <div className="absolute -left-32 top-1/4 size-[500px] rounded-full bg-uv/10 dark:bg-uv/20 blur-[150px]" />
+        <div className="absolute -right-20 bottom-1/4 size-[400px] rounded-full bg-violet-300/20 dark:bg-strobe/15 blur-[120px]" />
 
         {/* Scanlines overlay */}
-        <div className="absolute inset-0 scanlines opacity-50" />
+        <div className="absolute inset-0 hidden dark:block scanlines opacity-50" />
 
         {/* Content */}
         <div className="relative flex h-full flex-col justify-between p-12">
           {/* Top: Logo */}
           <div>
             <PuertaLogo size={36} />
-            <p className="mt-2 font-mono text-[9px] uppercase tracking-[.2em] text-muted">Gestión nocturna</p>
+            <p className="mt-2 font-mono text-[9px] font-bold uppercase tracking-[.2em] text-gray-400 dark:text-muted">
+              by <span className="text-uv">NORDEV</span>
+            </p>
           </div>
 
           {/* Center: Decorative text */}
           <div>
-            <p className="font-display text-[80px] leading-[.85] tracking-[-0.04em] text-white/[.03]">
+            <p className="font-display text-[80px] leading-[.85] tracking-[-0.04em] text-gray-900/[.04] dark:text-white/[.03]">
               CONTROL<br />TOTAL
             </p>
             <div className="mt-8 space-y-4">
               <div className="flex items-center gap-3">
-                <div className="size-2 bg-strobe shadow-[0_0_12px_#8B5CF6]" />
-                <p className="font-mono text-[10px] uppercase tracking-wider text-muted">Entradas verificadas en tiempo real</p>
+                <div className="size-2 bg-uv shadow-[0_0_8px_rgba(139,92,246,0.6)] dark:shadow-[0_0_12px_#8B5CF6]" />
+                <p className="font-mono text-[10px] uppercase tracking-wider text-gray-500 dark:text-muted">Entradas verificadas en tiempo real</p>
               </div>
               <div className="flex items-center gap-3">
-                <div className="size-2 bg-cyan-400 shadow-[0_0_12px_#22d3ee]" />
-                <p className="font-mono text-[10px] uppercase tracking-wider text-muted">Métricas y recaudación al instante</p>
+                <div className="size-2 bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.5)] dark:bg-cyan-400 dark:shadow-[0_0_12px_#22d3ee]" />
+                <p className="font-mono text-[10px] uppercase tracking-wider text-gray-500 dark:text-muted">Métricas y recaudación al instante</p>
               </div>
               <div className="flex items-center gap-3">
-                <div className="size-2 bg-emerald-400 shadow-[0_0_12px_#34d399]" />
-                <p className="font-mono text-[10px] uppercase tracking-wider text-muted">Gestión de RRPP y listas</p>
+                <div className="size-2 bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] dark:bg-emerald-400 dark:shadow-[0_0_12px_#34d399]" />
+                <p className="font-mono text-[10px] uppercase tracking-wider text-gray-500 dark:text-muted">Gestión de RRPP y listas</p>
               </div>
             </div>
           </div>
 
           {/* Bottom: Version */}
-          <p className="font-mono text-[9px] uppercase tracking-wider text-muted/50">v1.0 · Puerta Systems</p>
+          <p className="font-mono text-[9px] uppercase tracking-wider text-gray-300 dark:text-muted/50">v1.0 · NORDEV</p>
         </div>
 
         {/* Animated vertical line */}
         <div className="absolute right-0 top-0 h-full w-px">
-          <div className="h-full w-full bg-gradient-to-b from-transparent via-uv/60 to-transparent" />
+          <div className="h-full w-full bg-gradient-to-b from-transparent via-uv/40 dark:via-uv/60 to-transparent" />
         </div>
       </div>
 
