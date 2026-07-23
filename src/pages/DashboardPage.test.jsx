@@ -39,6 +39,17 @@ function renderDashboard() {
 describe('DashboardPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    // Provide localStorage mock for ThemeContext
+    const store = {}
+    Object.defineProperty(window, 'localStorage', {
+      value: {
+        getItem: vi.fn((key) => store[key] || null),
+        setItem: vi.fn((key, value) => { store[key] = value }),
+        removeItem: vi.fn((key) => { delete store[key] }),
+        clear: vi.fn(() => { Object.keys(store).forEach(k => delete store[k]) }),
+      },
+      writable: true,
+    })
   })
 
   describe('tab navigation', () => {
@@ -47,7 +58,7 @@ describe('DashboardPage', () => {
 
       expect(screen.getByRole('tab', { name: /métricas/i })).toBeInTheDocument()
       expect(screen.getByRole('tab', { name: /noches/i })).toBeInTheDocument()
-      expect(screen.getByRole('tab', { name: /mis rrpp/i })).toBeInTheDocument()
+      expect(screen.getByRole('tab', { name: /mi personal/i })).toBeInTheDocument()
       expect(screen.getByRole('tab', { name: /auditoría rrpp/i })).toBeInTheDocument()
     })
 
@@ -67,12 +78,12 @@ describe('DashboardPage', () => {
       expect(screen.queryByTestId('metricas-tab')).not.toBeInTheDocument()
     })
 
-    it('switches to Mis RRPP tab on click', () => {
+    it('switches to Mi Personal tab on click', async () => {
       renderDashboard()
 
-      fireEvent.click(screen.getByRole('tab', { name: /mis rrpp/i }))
+      fireEvent.click(screen.getByRole('tab', { name: /mi personal/i }))
 
-      expect(screen.getByTestId('gestion-rrpp-tab')).toBeInTheDocument()
+      expect(await screen.findByTestId('gestion-personal-tab')).toBeInTheDocument()
       expect(screen.queryByTestId('metricas-tab')).not.toBeInTheDocument()
     })
 

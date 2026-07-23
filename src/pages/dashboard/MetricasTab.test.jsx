@@ -40,6 +40,17 @@ function renderMetricas(props = {}) {
 describe('MetricasTab', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    // Provide localStorage mock for ThemeContext
+    const store = {}
+    Object.defineProperty(window, 'localStorage', {
+      value: {
+        getItem: vi.fn((key) => store[key] || null),
+        setItem: vi.fn((key, value) => { store[key] = value }),
+        removeItem: vi.fn((key) => { delete store[key] }),
+        clear: vi.fn(() => { Object.keys(store).forEach(k => delete store[k]) }),
+      },
+      writable: true,
+    })
     api.get.mockResolvedValue(testRecaudacion)
   })
 

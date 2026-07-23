@@ -9,14 +9,16 @@ vi.mock('../../lib/api', () => ({
 import { api } from '../../lib/api'
 
 const testRankingRrpp = [
-  { rrpp_id: 1, nombre: 'Lucía Fernández', anotados: 28, ingresados: 21, tasa_conversion: 75, recaudado_total: 94500 },
-  { rrpp_id: 2, nombre: 'Matías Gomez', anotados: 15, ingresados: 12, tasa_conversion: 80, recaudado_total: 54000 },
-  { rrpp_id: 3, nombre: 'Valentina Cruz', anotados: 42, ingresados: 38, tasa_conversion: 90, recaudado_total: 171000 },
-  { rrpp_id: 4, nombre: 'Bruno Díaz', anotados: 9, ingresados: 5, tasa_conversion: 56, recaudado_total: 22500 },
+  { rrpp_id: 1, nombre: 'Lucía Fernández', anotados: 28, ingresados: 21, tasa_conversion: 75, recaudado_total: 94500, comision_a_pagar: 94500, tipo_comision: 'fijo', valor_comision: 500 },
+  { rrpp_id: 2, nombre: 'Matías Gomez', anotados: 15, ingresados: 12, tasa_conversion: 80, recaudado_total: 54000, comision_a_pagar: 54000, tipo_comision: 'fijo', valor_comision: 500 },
+  { rrpp_id: 3, nombre: 'Valentina Cruz', anotados: 42, ingresados: 38, tasa_conversion: 90, recaudado_total: 171000, comision_a_pagar: 171000, tipo_comision: 'fijo', valor_comision: 500 },
+  { rrpp_id: 4, nombre: 'Bruno Díaz', anotados: 9, ingresados: 5, tasa_conversion: 56, recaudado_total: 22500, comision_a_pagar: 22500, tipo_comision: 'fijo', valor_comision: 500 },
 ]
 
+const testEventos = [{ id: 1, nombre: 'Noche Electro', fecha: '2024-06-15' }]
+
 const baseProps = {
-  eventoId: 1,
+  eventos: testEventos,
   onCreateRrpp: vi.fn(),
   onAsignarRrpp: vi.fn(),
 }
@@ -43,7 +45,7 @@ describe('AuditoriaRrppTab', () => {
     })
   })
 
-  it('sorts rows by recaudado_total descending', async () => {
+  it('sorts rows by comision_a_pagar descending', async () => {
     api.get.mockResolvedValueOnce(testRankingRrpp)
     render(<AuditoriaRrppTab {...baseProps} />)
 
@@ -56,19 +58,19 @@ describe('AuditoriaRrppTab', () => {
   })
 
   it('applies green color for tasa_conversion >= 70', async () => {
-    api.get.mockResolvedValueOnce([{ rrpp_id: 1, nombre: 'High', anotados: 10, ingresados: 8, tasa_conversion: 80, recaudado_total: 50000 }])
+    api.get.mockResolvedValueOnce([{ rrpp_id: 1, nombre: 'High', anotados: 10, ingresados: 8, tasa_conversion: 80, comision_a_pagar: 50000, tipo_comision: 'fijo', valor_comision: 500 }])
     render(<AuditoriaRrppTab {...baseProps} />)
 
     await waitFor(() => {
       const row = screen.getByTestId('ranking-row')
       const cells = row.querySelectorAll('td')
-      // 4th cell is effectiveness
+      // 4th cell (index 3) is effectiveness
       expect(cells[3].className).toContain('text-emerald-400')
     })
   })
 
   it('applies yellow color for tasa_conversion between 40-69', async () => {
-    api.get.mockResolvedValueOnce([{ rrpp_id: 1, nombre: 'Mid', anotados: 10, ingresados: 5, tasa_conversion: 50, recaudado_total: 30000 }])
+    api.get.mockResolvedValueOnce([{ rrpp_id: 1, nombre: 'Mid', anotados: 10, ingresados: 5, tasa_conversion: 50, comision_a_pagar: 30000, tipo_comision: 'fijo', valor_comision: 500 }])
     render(<AuditoriaRrppTab {...baseProps} />)
 
     await waitFor(() => {
@@ -79,7 +81,7 @@ describe('AuditoriaRrppTab', () => {
   })
 
   it('applies red color for tasa_conversion < 40', async () => {
-    api.get.mockResolvedValueOnce([{ rrpp_id: 1, nombre: 'Low', anotados: 10, ingresados: 2, tasa_conversion: 20, recaudado_total: 10000 }])
+    api.get.mockResolvedValueOnce([{ rrpp_id: 1, nombre: 'Low', anotados: 10, ingresados: 2, tasa_conversion: 20, comision_a_pagar: 10000, tipo_comision: 'fijo', valor_comision: 500 }])
     render(<AuditoriaRrppTab {...baseProps} />)
 
     await waitFor(() => {
@@ -107,7 +109,7 @@ describe('AuditoriaRrppTab', () => {
 
     await waitFor(() => {
       expect(screen.getByTestId('empty-state')).toBeInTheDocument()
-      expect(screen.getByText('SIN DATOS')).toBeInTheDocument()
+      expect(screen.getByText('SIN RRPP ASIGNADOS')).toBeInTheDocument()
     })
   })
 

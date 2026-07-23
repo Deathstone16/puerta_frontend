@@ -52,6 +52,17 @@ function renderAdmin() {
 describe('AdminPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    // Provide localStorage mock for ThemeContext
+    const store = {}
+    Object.defineProperty(window, 'localStorage', {
+      value: {
+        getItem: vi.fn((key) => store[key] || null),
+        setItem: vi.fn((key, value) => { store[key] = value }),
+        removeItem: vi.fn((key) => { delete store[key] }),
+        clear: vi.fn(() => { Object.keys(store).forEach(k => delete store[k]) }),
+      },
+      writable: true,
+    })
     // Mock both API calls: metricas + organizadores
     api.get.mockImplementation((path) => {
       if (path.includes('/admin/metricas')) return Promise.resolve(testAdminData)
