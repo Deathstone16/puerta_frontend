@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import Icon from '../components/Icons'
 import PuertaLogo from '../components/PuertaLogo'
 import { useAuth } from '../context/AuthContext'
+import { useTheme } from '../context/ThemeContext'
 
 const ROLE_CONTEXT = {
   dueno: {
@@ -75,6 +76,7 @@ export default function LoginPage() {
   const [selectedRole, setSelectedRole] = useState('dueno')
 
   const ctx = ROLE_CONTEXT[selectedRole]
+  const { isDark, toggleTheme } = useTheme()
 
   const submit = async (e) => {
     e.preventDefault()
@@ -92,6 +94,14 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen">
+      {/* Theme toggle — floating top-right */}
+      <button
+        onClick={toggleTheme}
+        className="fixed right-4 top-4 z-50 grid size-10 place-items-center border border-gray-200 bg-white/80 text-gray-500 backdrop-blur-sm transition hover:border-strobe hover:text-strobe dark:border-white/15 dark:bg-void/80 dark:text-muted"
+        aria-label={isDark ? 'Modo claro' : 'Modo oscuro'}
+      >
+        {isDark ? '☀️' : '🌙'}
+      </button>
       {/* Left decorative panel — hidden on mobile */}
       <div className="relative hidden w-1/2 overflow-hidden bg-gray-50 dark:bg-void lg:block">
         {/* Grid background */}
@@ -119,7 +129,7 @@ export default function LoginPage() {
 
           {/* Center: Dynamic bullets based on role */}
           <div>
-            <p className="font-display text-[80px] leading-[.85] tracking-[-0.04em] text-gray-900/[.04] dark:text-white/[.03]">
+            <p className="font-display text-[80px] leading-[.85] tracking-[-0.04em] text-gray-900/[.30] dark:text-white/[.30]">
               CONTROL<br />TOTAL
             </p>
             <div className="mt-8 space-y-4 transition-opacity duration-300">

@@ -38,6 +38,7 @@ function formFromEvento(evento) {
 export default function NocheFormModal({ open, onClose, evento = null, onSuccess }) {
   const isEdit = Boolean(evento?.id)
   const [form, setForm] = useState(EMPTY_FORM)
+  const [loadingDetail, setLoadingDetail] = useState(false)
   const [errors, setErrors] = useState({})
   const [pricePreview, setPricePreview] = useState(null)
   const [previewLoading, setPreviewLoading] = useState(false)
@@ -45,13 +46,23 @@ export default function NocheFormModal({ open, onClose, evento = null, onSuccess
   const [apiError, setApiError] = useState('')
   const debounceRef = useRef(null)
 
-  // Reset form when modal opens/changes
+  // Reset form when modal opens/changes — fetch full detail in edit mode
   useEffect(() => {
-    if (open) {
-      setForm(formFromEvento(evento))
-      setErrors({})
-      setApiError('')
-      setPricePreview(null)
+    if (!open) return
+    setErrors({})
+    setApiError('')
+    setPricePreview(null)
+
+    if (evento?.id) {
+      setLoadingDetail(true)
+      setForm(EMPTY_FORM)
+      api.get(`/eventos/${evento.id}/`)
+        .then((detail) => setForm(formFromEvento(detail)))
+        .catch(() => setForm(formFromEvento(evento))) // fallback to partial data
+        .finally(() => setLoadingDetail(false))
+    } else {
+      setForm(EMPTY_FORM)
+      setLoadingDetail(false)
     }
   }, [open, evento])
 
@@ -142,6 +153,14 @@ export default function NocheFormModal({ open, onClose, evento = null, onSuccess
 
   return (
     <Modal open={open} onClose={onClose} label={isEdit ? 'Editar noche' : 'Crear nueva noche'}>
+      {loadingDetail ? (
+        <div className="grid min-h-48 place-items-center">
+          <div className="text-center">
+            <div className="mx-auto size-8 animate-spin border-2 border-gray-200 border-t-strobe dark:border-white/10" />
+            <p className="mt-4 font-mono text-[10px] uppercase tracking-widest text-gray-500 dark:text-muted">Cargando evento</p>
+          </div>
+        </div>
+      ) : (
       <form onSubmit={handleSubmit} data-testid="noche-form">
         <p className="eyebrow mb-3">{isEdit ? 'Editar evento' : 'Nuevo evento'}</p>
         <h2 className="display-title pr-8 text-4xl">
@@ -284,6 +303,7 @@ export default function NocheFormModal({ open, onClose, evento = null, onSuccess
           {submitting ? 'GUARDANDO...' : isEdit ? 'GUARDAR CAMBIOS' : 'CREAR NOCHE'}
         </button>
       </form>
+      )}
     </Modal>
   )
 }

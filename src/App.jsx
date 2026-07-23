@@ -24,9 +24,11 @@ export default function App() {
     <AuthProvider>
       <PurchaseProvider>
         <Routes>
+          {/* Login — standalone, sin navbar */}
+          <Route path="/login" element={<LoginPage />} />
+
           {/* Public routes (buyers need these) */}
           <Route element={<PublicLayout />}>
-            <Route path="/login" element={<LoginPage />} />
             <Route path="/evento/:id" element={<EventDetailPage />} />
             <Route path="/checkout/:id" element={<CheckoutPage />} />
             <Route path="/procesando" element={<PaymentProcessingPage />} />

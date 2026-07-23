@@ -49,18 +49,22 @@ describe('NocheFormModal', () => {
       expect(screen.getByText('NUEVA NOCHE')).toBeInTheDocument()
     })
 
-    it('shows event name in edit mode', () => {
+    it('shows event name in edit mode', async () => {
       const evento = { id: 1, nombre: 'NACHT PARTY', fecha: '2026-08-15T23:59', aforo_max: 300, precio_base: 3800, line_up: ['DJ A'] }
+      api.get.mockResolvedValueOnce(evento)
       render(<NocheFormModal {...baseProps} evento={evento} />)
 
-      expect(screen.getByText('NACHT PARTY')).toBeInTheDocument()
+      expect(await screen.findByText('NACHT PARTY')).toBeInTheDocument()
     })
 
-    it('pre-populates form fields in edit mode', () => {
+    it('pre-populates form fields in edit mode', async () => {
       const evento = { id: 1, nombre: 'NACHT', fecha: '2026-08-15T23:59', aforo_max: 300, precio_base: 3800, line_up: ['DJ A', 'DJ B'] }
+      api.get.mockResolvedValueOnce(evento)
       render(<NocheFormModal {...baseProps} evento={evento} />)
 
-      expect(screen.getByTestId('input-nombre')).toHaveValue('NACHT')
+      await waitFor(() => {
+        expect(screen.getByTestId('input-nombre')).toHaveValue('NACHT')
+      })
       expect(screen.getByTestId('input-aforo')).toHaveValue(300)
       expect(screen.getByTestId('input-precio')).toHaveValue(3800)
       expect(screen.getByTestId('input-lineup')).toHaveValue('DJ A, DJ B')
@@ -137,7 +141,12 @@ describe('NocheFormModal', () => {
     it('calls PATCH /eventos/:id/ in edit mode', async () => {
       api.patch.mockResolvedValueOnce({ id: 1 })
       const evento = { id: 1, nombre: 'OLD', fecha: '2026-08-15T23:59', aforo_max: 300, precio_base: 3800, line_up: [] }
+      api.get.mockResolvedValueOnce(evento)
       render(<NocheFormModal {...baseProps} evento={evento} />)
+
+      await waitFor(() => {
+        expect(screen.getByTestId('input-nombre')).toHaveValue('OLD')
+      })
 
       fireEvent.change(screen.getByTestId('input-nombre'), { target: { value: 'UPDATED' } })
       fireEvent.click(screen.getByTestId('submit-btn'))

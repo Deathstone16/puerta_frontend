@@ -69,7 +69,9 @@ export function AuthProvider({ children }) {
     }
   }, [logout])
 
-  useEffect(() => {
+  // Configure auth provider synchronously so child effects already have
+  // getAccessToken available on first mount (avoids race condition).
+  useMemo(() => {
     configureAuthProvider({
       getAccessToken: () => sessionRef.current?.accessToken || null,
       refreshAccessToken,

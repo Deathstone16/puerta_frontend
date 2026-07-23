@@ -43,7 +43,7 @@ export default function DashboardPage() {
   // Fetch eventos on mount (only mine)
   useEffect(() => {
     let active = true
-    api.get('/eventos/?mis_eventos=true')
+    api.get('/eventos/mios/')
       .then((e) => { if (active) setEventos(Array.isArray(e) ? e : []) })
       .catch(() => { if (active) setEventos([]) })
     return () => { active = false }
@@ -102,7 +102,7 @@ export default function DashboardPage() {
   // Refresh helpers
   const refreshEventos = useCallback(async () => {
     try {
-      const e = await api.get('/eventos/?mis_eventos=true')
+      const e = await api.get('/eventos/mios/')
       if (Array.isArray(e)) setEventos(e)
     } catch { /* retain current */ }
   }, [])
