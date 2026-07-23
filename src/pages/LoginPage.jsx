@@ -1,8 +1,69 @@
 import { useState } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import Icon from '../components/Icons'
 import PuertaLogo from '../components/PuertaLogo'
 import { useAuth } from '../context/AuthContext'
+
+const ROLE_CONTEXT = {
+  dueno: {
+    label: 'Dueño',
+    icon: 'chart',
+    color: 'text-uv',
+    borderColor: 'border-uv',
+    bgTint: 'bg-uv/10',
+    dotColor: 'bg-uv shadow-[0_0_8px_rgba(139,92,246,0.6)] dark:shadow-[0_0_12px_#8B5CF6]',
+    subtitle: 'Gestioná tus eventos y tu equipo.',
+    bullets: [
+      'Métricas y recaudación en tiempo real',
+      'Gestión de RRPP, guardias y cajeras',
+      'Control total de tus noches',
+    ],
+  },
+  rrpp: {
+    label: 'RRPP',
+    icon: 'users',
+    color: 'text-strobe',
+    borderColor: 'border-strobe',
+    bgTint: 'bg-strobe/10',
+    dotColor: 'bg-strobe shadow-[0_0_8px_rgba(139,92,246,0.6)] dark:shadow-[0_0_12px_#8B5CF6]',
+    subtitle: 'Gestioná tus listas e invitados.',
+    bullets: [
+      'Listas de invitados por evento',
+      'Seguimiento de anotados e ingresados',
+      'Comisiones por noche',
+    ],
+  },
+  guardia: {
+    label: 'Guardia',
+    icon: 'shield',
+    color: 'text-cyan-400',
+    borderColor: 'border-cyan-400',
+    bgTint: 'bg-cyan-400/10',
+    dotColor: 'bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.5)] dark:bg-cyan-400 dark:shadow-[0_0_12px_#22d3ee]',
+    subtitle: 'Controlá el acceso de la noche.',
+    bullets: [
+      'Escaneo de QR en puerta',
+      'Aprobación y rechazo de acceso',
+      'Aforo en vivo',
+    ],
+  },
+  cajera: {
+    label: 'Cajera',
+    icon: 'cash',
+    color: 'text-emerald-400',
+    borderColor: 'border-emerald-400',
+    bgTint: 'bg-emerald-400/10',
+    dotColor: 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] dark:bg-emerald-400 dark:shadow-[0_0_12px_#34d399]',
+    subtitle: 'Cobrá y registrá ingresos.',
+    bullets: [
+      'Cobro por efectivo o transferencia',
+      'Validación de entradas web',
+      'Registro de ventas en puerta',
+    ],
+  },
+}
+
+const ROLES = ['dueno', 'rrpp', 'guardia', 'cajera']
 
 export default function LoginPage() {
   const { login, routeForRole } = useAuth()
@@ -11,6 +72,9 @@ export default function LoginPage() {
   const [form, setForm] = useState({ username: '', password: '' })
   const [status, setStatus] = useState('idle')
   const [error, setError] = useState('')
+  const [selectedRole, setSelectedRole] = useState('dueno')
+
+  const ctx = ROLE_CONTEXT[selectedRole]
 
   const submit = async (e) => {
     e.preventDefault()
@@ -53,24 +117,18 @@ export default function LoginPage() {
             </p>
           </div>
 
-          {/* Center: Decorative text */}
+          {/* Center: Dynamic bullets based on role */}
           <div>
             <p className="font-display text-[80px] leading-[.85] tracking-[-0.04em] text-gray-900/[.04] dark:text-white/[.03]">
               CONTROL<br />TOTAL
             </p>
-            <div className="mt-8 space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="size-2 bg-uv shadow-[0_0_8px_rgba(139,92,246,0.6)] dark:shadow-[0_0_12px_#8B5CF6]" />
-                <p className="font-mono text-[10px] uppercase tracking-wider text-gray-500 dark:text-muted">Entradas verificadas en tiempo real</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="size-2 bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.5)] dark:bg-cyan-400 dark:shadow-[0_0_12px_#22d3ee]" />
-                <p className="font-mono text-[10px] uppercase tracking-wider text-gray-500 dark:text-muted">Métricas y recaudación al instante</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="size-2 bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] dark:bg-emerald-400 dark:shadow-[0_0_12px_#34d399]" />
-                <p className="font-mono text-[10px] uppercase tracking-wider text-gray-500 dark:text-muted">Gestión de RRPP y listas</p>
-              </div>
+            <div className="mt-8 space-y-4 transition-opacity duration-300">
+              {ctx.bullets.map((bullet, i) => (
+                <div key={`${selectedRole}-${i}`} className="flex items-center gap-3">
+                  <div className={`size-2 ${ctx.dotColor}`} />
+                  <p className="font-mono text-[10px] uppercase tracking-wider text-gray-500 dark:text-muted">{bullet}</p>
+                </div>
+              ))}
             </div>
           </div>
 
@@ -78,7 +136,7 @@ export default function LoginPage() {
           <p className="font-mono text-[9px] uppercase tracking-wider text-gray-300 dark:text-muted/50">v1.0 · NORDEV</p>
         </div>
 
-        {/* Animated vertical line */}
+        {/* Vertical accent line */}
         <div className="absolute right-0 top-0 h-full w-px">
           <div className="h-full w-full bg-gradient-to-b from-transparent via-uv/40 dark:via-uv/60 to-transparent" />
         </div>
@@ -92,23 +150,8 @@ export default function LoginPage() {
         </div>
 
         <form onSubmit={submit} className="w-full max-w-sm">
-          {/* Mobile logo */}
-          <div className="mb-10 lg:hidden">
-            <Link to="/" className="inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-wider text-gray-400 transition hover:text-strobe dark:text-muted">
-              <Icon name="back" size={14} /> Volver al inicio
-            </Link>
-          </div>
-
-          {/* Desktop back link */}
-          <Link
-            to="/"
-            className="mb-10 hidden items-center gap-2 font-mono text-[10px] uppercase tracking-wider text-gray-400 transition hover:text-strobe dark:text-muted lg:inline-flex"
-          >
-            <Icon name="back" size={14} /> Volver al inicio
-          </Link>
-
           {/* Header */}
-          <div className="mb-10">
+          <div className="mb-8">
             <div className="mb-5 inline-flex items-center gap-3 border border-gray-200 px-4 py-2 dark:border-white/10">
               <PuertaLogo size={20} showText={false} />
               <span className="font-mono text-[9px] font-bold uppercase tracking-wider text-gray-500 dark:text-muted">Acceso restringido</span>
@@ -117,8 +160,31 @@ export default function LoginPage() {
               INICIAR<br /><span className="text-uv">SESIÓN</span>
             </h1>
             <p className="mt-4 text-sm leading-6 text-gray-500 dark:text-muted">
-              Ingresá con las credenciales asignadas a tu rol.
+              {ctx.subtitle}
             </p>
+          </div>
+
+          {/* Role selector */}
+          <div className="mb-7 grid grid-cols-4 gap-1.5">
+            {ROLES.map((role) => {
+              const rc = ROLE_CONTEXT[role]
+              const isActive = selectedRole === role
+              return (
+                <button
+                  key={role}
+                  type="button"
+                  onClick={() => setSelectedRole(role)}
+                  className={`flex flex-col items-center gap-1.5 border py-2.5 px-1 font-mono text-[9px] font-bold uppercase tracking-wider transition ${
+                    isActive
+                      ? `${rc.borderColor} ${rc.bgTint} ${rc.color}`
+                      : 'border-gray-200 text-gray-400 hover:border-gray-300 dark:border-white/10 dark:text-muted dark:hover:border-white/20'
+                  }`}
+                >
+                  <Icon name={rc.icon} size={18} />
+                  <span>{rc.label}</span>
+                </button>
+              )
+            })}
           </div>
 
           {/* Fields */}
@@ -176,13 +242,10 @@ export default function LoginPage() {
             )}
           </button>
 
-          {/* Footer */}
-          <div className="mt-8 border-t border-gray-100 pt-6 dark:border-white/5">
-            <p className="text-center font-mono text-[9px] uppercase leading-5 tracking-wider text-gray-400 dark:text-muted">
-              Sesión segura · tokens temporales<br />
-              No se almacenan credenciales
-            </p>
-          </div>
+          {/* Footer - minimal, human */}
+          <p className="mt-6 text-center font-mono text-[9px] uppercase tracking-wider text-gray-300 dark:text-muted/40">
+            Tus datos están protegidos
+          </p>
         </form>
       </div>
     </div>

@@ -3,19 +3,20 @@ import Icon from '../components/Icons'
 import MercadoPagoConnect from '../components/MercadoPagoConnect'
 import NocheFormModal from '../components/NocheFormModal'
 import PriceBreakdownModal from '../components/PriceBreakdownModal'
-import RrppFormModal from '../components/RrppFormModal'
-import AsignarRrppModal from '../components/AsignarRrppModal'
+import PersonalFormModal from '../components/PersonalFormModal'
+import AsignarPersonalModal from '../components/AsignarPersonalModal'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../lib/api'
 import MetricasTab from './dashboard/MetricasTab'
 import NochesTab from './dashboard/NochesTab'
 import AuditoriaRrppTab from './dashboard/AuditoriaRrppTab'
-import GestionRrppTab from './dashboard/GestionRrppTab'
+import GestionPersonalTab from './dashboard/GestionPersonalTab'
+import CierreCajaTab from './dashboard/CierreCajaTab'
 
-const TABS = [
+const BASE_TABS = [
   { id: 'metricas', label: 'Métricas' },
   { id: 'noches', label: 'Noches' },
-  { id: 'rrpp', label: 'Mis RRPP' },
+  { id: 'personal', label: 'Mi Personal' },
   { id: 'auditoria', label: 'Auditoría RRPP' },
 ]
 
@@ -27,8 +28,17 @@ export default function DashboardPage() {
   const [aforo, setAforo] = useState(null)
   const [aforoStatus, setAforoStatus] = useState('loading')
   const [boliche, setBoliche] = useState(null)
+  const [staffList, setStaffList] = useState([])
   const [modalState, setModalState] = useState({ type: null, data: null })
   const [breakdownData, setBreakdownData] = useState(null)
+
+  // Dynamic tabs: add Cierre de Caja if there's at least 1 cajera
+  const hasCajera = staffList.some((s) => s.rol === 'cajera')
+  const TABS = useMemo(() => {
+    const tabs = [...BASE_TABS]
+    if (hasCajera) tabs.push({ id: 'cierre-caja', label: 'Cierre de Caja' })
+    return tabs
+  }, [hasCajera])
 
   // Fetch eventos on mount (only mine)
   useEffect(() => {
@@ -45,6 +55,15 @@ export default function DashboardPage() {
     api.get('/boliches/mio/')
       .then((data) => { if (active) setBoliche(data) })
       .catch(() => { if (active) setBoliche(null) })
+    return () => { active = false }
+  }, [])
+
+  // Fetch staff list (to check for cajeras)
+  useEffect(() => {
+    let active = true
+    api.get('/personal/')
+      .then((data) => { if (active) setStaffList(Array.isArray(data) ? data : []) })
+      .catch(() => { if (active) setStaffList([]) })
     return () => { active = false }
   }, [])
 
@@ -182,20 +201,21 @@ export default function DashboardPage() {
           onCreate={() => openModal('noche-create')}
         />
       )}
-      {activeTab === 'rrpp' && (
-        <GestionRrppTab
+      {activeTab === 'personal' && (
+        <GestionPersonalTab
           key={refreshKey}
-          onCreateRrpp={() => openModal('rrpp-create')}
-          onAsignarRrpp={() => openModal('rrpp-assign')}
+          onCreatePersonal={() => openModal('personal-create')}
+          onAsignarPersonal={() => openModal('personal-assign')}
         />
       )}
       {activeTab === 'auditoria' && (
         <AuditoriaRrppTab
-          eventoId={activeEventId}
+          eventos={eventos}
           onCreateRrpp={() => openModal('rrpp-create')}
           onAsignarRrpp={() => openModal('rrpp-assign')}
         />
       )}
+      {activeTab === 'cierre-caja' && <CierreCajaTab eventos={eventos} />}
 
       {/* Modals */}
       <NocheFormModal
@@ -209,13 +229,13 @@ export default function DashboardPage() {
           }
         }}
       />
-      <RrppFormModal
-        open={modalState.type === 'rrpp-create'}
+      <PersonalFormModal
+        open={modalState.type === 'personal-create'}
         onClose={closeModal}
-        onSuccess={() => { closeModal(); triggerRefresh() }}
+        onSuccess={() => { closeModal(); triggerRefresh(); api.get('/personal/').then((d) => { if (Array.isArray(d) && d.some((s) => s.rol === 'cajera')) setStaffList(d); }).catch(() => {}) }}
       />
-      <AsignarRrppModal
-        open={modalState.type === 'rrpp-assign'}
+      <AsignarPersonalModal
+        open={modalState.type === 'personal-assign'}
         onClose={() => { closeModal(); triggerRefresh() }}
         eventos={eventos}
       />
@@ -225,6 +245,7 @@ export default function DashboardPage() {
         priceData={breakdownData?.priceData}
         eventoNombre={breakdownData?.nombre}
       />
+
     </main>
   )
 }

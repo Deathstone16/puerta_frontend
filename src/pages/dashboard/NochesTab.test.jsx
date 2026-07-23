@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import NochesTab from './NochesTab'
 
-vi.mock('../../components/EventoRrppAssigner', () => ({
+vi.mock('../../components/EventoPersonalPanel', () => ({
   default: ({ eventoId, eventoNombre, onClose }) => (
     <div data-testid={`rrpp-assigner-${eventoId}`}>{eventoNombre} assigner</div>
   ),

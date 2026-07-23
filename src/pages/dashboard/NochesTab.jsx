@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import Icon from '../../components/Icons'
-import EventoRrppAssigner from '../../components/EventoRrppAssigner'
+import EventoPersonalPanel from '../../components/EventoPersonalPanel'
 import { formatMoney } from '../../lib/format'
 
 /**
@@ -136,13 +136,15 @@ export default function NochesTab({ eventos = [], onEdit, onCancel, onCreate }) 
                   </div>
                 </article>
 
-                {/* Expanded: RRPP assignment panel */}
+                {/* Expanded: Personal assignment panel */}
                 {isExpanded && evento.estado !== 'cancelado' && (
-                  <EventoRrppAssigner
-                    eventoId={evento.id}
-                    eventoNombre={evento.nombre}
-                    onClose={() => setExpandedId(null)}
-                  />
+                  <div className="border-t border-gray-200 bg-gray-100 p-4 dark:border-white/10 dark:bg-void/50">
+                    <EventoPersonalPanel
+                      eventoId={evento.id}
+                      eventoNombre={evento.nombre}
+                      onClose={() => setExpandedId(null)}
+                    />
+                  </div>
                 )}
               </div>
             )
