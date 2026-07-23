@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Icon from '../components/Icons'
+import MercadoPagoConnect from '../components/MercadoPagoConnect'
 import NocheFormModal from '../components/NocheFormModal'
 import PriceBreakdownModal from '../components/PriceBreakdownModal'
 import RrppFormModal from '../components/RrppFormModal'
@@ -8,42 +9,48 @@ import { useAuth } from '../context/AuthContext'
 import { api } from '../lib/api'
 import MetricasTab from './dashboard/MetricasTab'
 import NochesTab from './dashboard/NochesTab'
+import CierreCajaTab from './dashboard/CierreCajaTab'
 import AuditoriaRrppTab from './dashboard/AuditoriaRrppTab'
+import CierreNocheTab from './dashboard/CierreNocheTab'
 
 const TABS = [
   { id: 'metricas', label: 'Métricas' },
   { id: 'noches', label: 'Noches' },
+  { id: 'cierre-caja', label: 'Cierre de Caja' },
   { id: 'auditoria', label: 'Auditoría RRPP' },
+  { id: 'cierre-noche', label: 'Cierre de Noche' },
 ]
 
 export default function DashboardPage() {
   const { session } = useAuth()
 
-  // --- State ---
   const [activeTab, setActiveTab] = useState('metricas')
   const [eventos, setEventos] = useState([])
   const [aforo, setAforo] = useState(null)
   const [aforoStatus, setAforoStatus] = useState('loading')
-  const [recaudacion, setRecaudacion] = useState(null)
+  const [boliche, setBoliche] = useState(null)
   const [modalState, setModalState] = useState({ type: null, data: null })
   const [breakdownData, setBreakdownData] = useState(null)
 
-  // --- Data fetching: eventos on mount ---
+  // Fetch eventos on mount
   useEffect(() => {
     let active = true
-    async function load() {
-      try {
-        const e = await api.get('/eventos/')
-        if (active) setEventos(Array.isArray(e) ? e : [])
-      } catch {
-        if (active) setEventos([])
-      }
-    }
-    load()
+    api.get('/eventos/')
+      .then((e) => { if (active) setEventos(Array.isArray(e) ? e : []) })
+      .catch(() => { if (active) setEventos([]) })
     return () => { active = false }
   }, [])
 
-  // --- Aforo polling every 4s ---
+  // Fetch boliche (for MP status)
+  useEffect(() => {
+    let active = true
+    api.get('/boliches/mio/')
+      .then((data) => { if (active) setBoliche(data) })
+      .catch(() => { if (active) setBoliche(null) })
+    return () => { active = false }
+  }, [])
+
+  // Aforo polling
   const aforoRef = useRef({ sequence: 0, controller: null })
   const activeEventId = eventos[0]?.id
 
@@ -53,7 +60,6 @@ export default function DashboardPage() {
     aforoRef.current.controller?.abort()
     const controller = new AbortController()
     aforoRef.current = { sequence, controller }
-
     try {
       const data = await api.get(`/dashboard/aforo/${activeEventId}/`, { signal: controller.signal })
       if (aforoRef.current.sequence !== sequence) return
@@ -76,29 +82,26 @@ export default function DashboardPage() {
     }
   }, [loadAforo])
 
-  // --- Recaudación fetch (when Métricas tab is active) ---
-  useEffect(() => {
-    if (activeTab !== 'metricas' || !activeEventId) return
-    let active = true
-    api.get(`/dashboard/recaudacion/${activeEventId}/`)
-      .then((data) => { if (active) setRecaudacion(data) })
-      .catch(() => { if (active) setRecaudacion(null) })
-    return () => { active = false }
-  }, [activeTab, activeEventId])
-
-  // --- Refresh helper after mutations ---
+  // Refresh helpers
   const refreshEventos = useCallback(async () => {
     try {
       const e = await api.get('/eventos/')
       if (Array.isArray(e)) setEventos(e)
-    } catch { /* retain current state */ }
+    } catch { /* retain current */ }
   }, [])
 
-  // --- Modal helpers ---
+  const refreshBoliche = useCallback(async () => {
+    try {
+      const data = await api.get('/boliches/mio/')
+      setBoliche(data)
+    } catch { setBoliche(null) }
+  }, [])
+
+  // Modal helpers
   const openModal = (type, data = null) => setModalState({ type, data })
   const closeModal = () => setModalState({ type: null, data: null })
 
-  // --- Cancel event ---
+  // Cancel event
   const handleCancel = useCallback(async (eventoId) => {
     const confirmado = window.confirm('¿Cancelar este evento? Esta acción no se puede deshacer.')
     if (!confirmado) return
@@ -108,12 +111,11 @@ export default function DashboardPage() {
         ev.id === eventoId ? { ...ev, estado: 'cancelado' } : ev
       ))
     } catch (error) {
-      const message = error.data?.detail || error.message || 'No se pudo cancelar el evento.'
-      window.alert(message)
+      window.alert(error.data?.detail || error.message || 'No se pudo cancelar el evento.')
     }
   }, [])
 
-  // --- Derived ---
+  // Derived
   const occupancy = useMemo(() => {
     if (!aforo) return null
     return aforo.porcentaje ?? Math.round((aforo.ingresados / aforo.aforo_max) * 100)
@@ -121,13 +123,18 @@ export default function DashboardPage() {
 
   return (
     <main className="container-page py-8 md:py-12">
-      {/* --- Header --- */}
+      {/* Header */}
       <div className="mb-9 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="eyebrow mb-3">Sala de control</p>
           <h1 className="display-title text-5xl sm:text-7xl">MIS EVENTOS</h1>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          {/* MP Connection status */}
+          <MercadoPagoConnect
+            mpConnected={boliche?.mp_connected ?? false}
+            onDisconnect={refreshBoliche}
+          />
           {/* Aforo badge */}
           {aforo && (
             <div className="flex items-center gap-2 border border-strobe/60 bg-strobe/10 px-3 py-2">
@@ -138,22 +145,19 @@ export default function DashboardPage() {
             </div>
           )}
           {/* Create button */}
-          <button
-            onClick={() => openModal('noche-create')}
-            className="btn-primary"
-          >
+          <button onClick={() => openModal('noche-create')} className="btn-primary">
             <Icon name="plus" size={17} /> Nuevo evento
           </button>
         </div>
       </div>
 
-      {/* --- Tab Navigator --- */}
-      <nav className="mb-8 flex gap-1 border-b border-gray-200 dark:border-white/10" aria-label="Secciones del dashboard">
+      {/* Tab Navigator */}
+      <nav className="mb-8 flex gap-1 overflow-x-auto border-b border-gray-200 dark:border-white/10" aria-label="Secciones del dashboard">
         {TABS.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`min-h-12 border-b-2 px-4 font-mono text-xs font-bold uppercase tracking-wider transition ${
+            className={`min-h-12 whitespace-nowrap border-b-2 px-4 font-mono text-xs font-bold uppercase tracking-wider transition ${
               activeTab === tab.id
                 ? 'border-uv text-gray-900 dark:text-paper-text'
                 : 'border-transparent text-gray-400 hover:text-gray-700 dark:text-muted dark:hover:text-paper-text'
@@ -166,10 +170,8 @@ export default function DashboardPage() {
         ))}
       </nav>
 
-      {/* --- Tab Content --- */}
-      {activeTab === 'metricas' && (
-        <MetricasTab eventos={eventos} recaudacion={recaudacion} />
-      )}
+      {/* Tab Content */}
+      {activeTab === 'metricas' && <MetricasTab eventos={eventos} />}
       {activeTab === 'noches' && (
         <NochesTab
           eventos={eventos}
@@ -178,6 +180,7 @@ export default function DashboardPage() {
           onCreate={() => openModal('noche-create')}
         />
       )}
+      {activeTab === 'cierre-caja' && <CierreCajaTab eventos={eventos} />}
       {activeTab === 'auditoria' && (
         <AuditoriaRrppTab
           eventoId={activeEventId}
@@ -185,8 +188,9 @@ export default function DashboardPage() {
           onAsignarRrpp={() => openModal('rrpp-assign')}
         />
       )}
+      {activeTab === 'cierre-noche' && <CierreNocheTab eventos={eventos} />}
 
-      {/* --- Modals --- */}
+      {/* Modals */}
       <NocheFormModal
         open={modalState.type === 'noche-create' || modalState.type === 'noche-edit'}
         onClose={closeModal}
