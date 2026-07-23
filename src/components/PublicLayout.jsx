@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import Icon from './Icons'
+import PuertaLogo from './PuertaLogo'
 import { useTheme } from '../context/ThemeContext'
 
 export default function PublicLayout() {
@@ -18,8 +19,8 @@ export default function PublicLayout() {
     <div className="min-h-screen overflow-x-hidden bg-white dark:bg-void">
       <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur-md dark:border-white/10 dark:bg-void/95">
         <div className="container-page flex h-16 items-center gap-4">
-          <Link to="/" className="font-display text-xl tracking-[-.08em] text-gray-900 dark:text-white" aria-label="Norware inicio">
-            NOR<span className="text-uv">/</span>WARE
+          <Link to="/" aria-label="Puerta inicio">
+            <PuertaLogo size={28} />
           </Link>
           <form onSubmit={submitSearch} className="relative ml-auto hidden w-full max-w-sm md:block">
             <Icon name="search" size={17} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-muted" />
@@ -37,7 +38,7 @@ export default function PublicLayout() {
       <main className="overflow-x-hidden"><Outlet /></main>
       <footer className="border-t border-gray-200 py-10 dark:border-white/10">
         <div className="container-page flex flex-col gap-4 text-xs text-gray-500 dark:text-muted sm:flex-row sm:items-center sm:justify-between">
-          <span className="font-display tracking-tight text-gray-900 dark:text-paper-text">NOR/WARE</span>
+          <PuertaLogo size={22} />
           <span className="font-mono">ENTRADAS Y ACCESO PARA NOCHES REALES.</span>
           <span>© 2026</span>
         </div>

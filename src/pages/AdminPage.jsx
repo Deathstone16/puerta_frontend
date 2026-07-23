@@ -61,7 +61,7 @@ export default function AdminPage() {
     <div className="min-h-screen bg-white dark:bg-void dark:bg-club-grid dark:bg-[size:32px_32px]">
       <header className="border-b border-gray-200 bg-white/95 dark:border-white/10 dark:bg-void/95">
         <div className="container-page flex min-h-16 items-center gap-5">
-          <span className="font-display text-lg text-gray-900 dark:text-white">ADMIN <span className="text-uv">NOR/WARE</span></span>
+          <span className="font-display text-lg text-gray-900 dark:text-white">ADMIN <span className="text-uv">NORDEV</span></span>
           <span className="hidden border-l border-gray-200 pl-5 font-mono text-[10px] uppercase tracking-[.18em] text-gray-500 dark:border-white/15 dark:text-muted sm:block">
             Panel de plataforma
           </span>
@@ -83,7 +83,7 @@ export default function AdminPage() {
       <main className="container-page py-8 md:py-12">
         <div className="mb-9">
           <p className="eyebrow mb-3">Panel administrativo</p>
-          <h1 className="display-title text-5xl sm:text-7xl">ADMIN NORWARE</h1>
+          <h1 className="display-title text-5xl sm:text-7xl">ADMIN NORDEV</h1>
         </div>
 
         {/* Tabs */}

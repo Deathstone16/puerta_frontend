@@ -9,16 +9,12 @@ import { useAuth } from '../context/AuthContext'
 import { api } from '../lib/api'
 import MetricasTab from './dashboard/MetricasTab'
 import NochesTab from './dashboard/NochesTab'
-import CierreCajaTab from './dashboard/CierreCajaTab'
 import AuditoriaRrppTab from './dashboard/AuditoriaRrppTab'
-import CierreNocheTab from './dashboard/CierreNocheTab'
 
 const TABS = [
   { id: 'metricas', label: 'Métricas' },
   { id: 'noches', label: 'Noches' },
-  { id: 'cierre-caja', label: 'Cierre de Caja' },
   { id: 'auditoria', label: 'Auditoría RRPP' },
-  { id: 'cierre-noche', label: 'Cierre de Noche' },
 ]
 
 export default function DashboardPage() {
@@ -180,7 +176,6 @@ export default function DashboardPage() {
           onCreate={() => openModal('noche-create')}
         />
       )}
-      {activeTab === 'cierre-caja' && <CierreCajaTab eventos={eventos} />}
       {activeTab === 'auditoria' && (
         <AuditoriaRrppTab
           eventoId={activeEventId}
@@ -188,7 +183,6 @@ export default function DashboardPage() {
           onAsignarRrpp={() => openModal('rrpp-assign')}
         />
       )}
-      {activeTab === 'cierre-noche' && <CierreNocheTab eventos={eventos} />}
 
       {/* Modals */}
       <NocheFormModal

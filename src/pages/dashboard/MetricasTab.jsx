@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -16,6 +16,63 @@ function KpiCard({ label, value, accent = false }) {
       <p className={`mt-3 font-display text-3xl sm:text-4xl ${accent ? 'text-strobe' : 'text-gray-900 dark:text-paper-text'}`}>
         {value}
       </p>
+    </div>
+  )
+}
+
+function SearchAutocomplete({ eventos, value, onChange, onSelect }) {
+  const [open, setOpen] = useState(false)
+  const wrapRef = useRef(null)
+
+  const suggestions = useMemo(() => {
+    if (!value.trim()) return []
+    const q = value.toLowerCase()
+    return eventos.filter((ev) => ev.nombre?.toLowerCase().includes(q)).slice(0, 6)
+  }, [eventos, value])
+
+  useEffect(() => {
+    const handleClick = (e) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  return (
+    <div ref={wrapRef} className="relative">
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => { onChange(e.target.value); setOpen(true) }}
+        onFocus={() => value.trim() && setOpen(true)}
+        placeholder="Buscar noche..."
+        className="field min-h-10 w-52 font-mono text-xs"
+        autoComplete="off"
+      />
+      {open && value.trim() && (
+        <div className="absolute left-0 top-full z-50 mt-1 w-64 border border-gray-200 bg-white shadow-lg dark:border-white/15 dark:bg-void">
+          {suggestions.length > 0 ? (
+            suggestions.map((ev) => (
+              <button
+                key={ev.id}
+                type="button"
+                onClick={() => { onSelect(ev); setOpen(false) }}
+                className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition hover:bg-gray-50 dark:hover:bg-white/5"
+              >
+                <div className="size-2 shrink-0 bg-uv" />
+                <div className="min-w-0">
+                  <p className="truncate text-xs font-semibold text-gray-900 dark:text-paper-text">{ev.nombre}</p>
+                  <p className="font-mono text-[9px] text-gray-400 dark:text-muted">
+                    {ev.fecha ? new Date(ev.fecha).toLocaleDateString('es-AR', { day: '2-digit', month: 'short' }) : ''}
+                  </p>
+                </div>
+              </button>
+            ))
+          ) : (
+            <p className="px-3 py-3 font-mono text-[10px] text-gray-400 dark:text-muted">Sin coincidencias</p>
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -133,20 +190,27 @@ export default function MetricasTab({ eventos = [] }) {
 
   const tieneHistorial = recaudacion && recaudacion.total_recaudado > 0
 
+  const handleSearchSelect = (ev) => {
+    setSearch(ev.nombre)
+    setSelectedEventId(String(ev.id))
+  }
+
   return (
     <div data-testid="metricas-tab">
       {/* Filters */}
       <div className="mb-6 flex flex-wrap items-center gap-3">
-        <input
-          type="text"
+        <SearchAutocomplete
+          eventos={eventos}
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar fecha, noche"
-          className="field min-h-10 w-48 font-mono text-xs"
+          onChange={(val) => {
+            setSearch(val)
+            if (!val.trim()) setSelectedEventId('todos')
+          }}
+          onSelect={handleSearchSelect}
         />
         <select
           value={selectedEventId}
-          onChange={(e) => setSelectedEventId(e.target.value)}
+          onChange={(e) => { setSelectedEventId(e.target.value); if (e.target.value === 'todos') setSearch('') }}
           className="field min-h-10 min-w-[180px] font-mono text-xs"
           data-testid="metricas-event-select"
         >
