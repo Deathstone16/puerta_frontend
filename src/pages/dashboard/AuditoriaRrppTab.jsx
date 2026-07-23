@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import Icon from '../../components/Icons'
-import { formatMoney } from '../../data/mockData'
-import { mockRankingRrpp } from '../../data/dashboardMockData'
+import { formatMoney } from '../../lib/format'
 import { api } from '../../lib/api'
 
 /**
@@ -30,7 +29,7 @@ export default function AuditoriaRrppTab({ eventoId, onCreateRrpp, onAsignarRrpp
 
     api.get(`/dashboard/ranking-rrpp/${eventoId}/`)
       .then((data) => { if (active) setRanking(Array.isArray(data) ? data : []) })
-      .catch((error) => { if (active && error.status === 0) setRanking(mockRankingRrpp) })
+      .catch(() => { if (active) setRanking([]) })
       .finally(() => { if (active) setLoading(false) })
 
     return () => { active = false }

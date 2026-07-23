@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Modal from './Modal'
 import Icon from './Icons'
-import { formatMoney } from '../data/mockData'
+import { formatMoney } from '../lib/format'
 import { api } from '../lib/api'
 
 /**

@@ -1,10 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { AuthProvider } from '../context/AuthContext'
 import { ThemeProvider } from '../context/ThemeContext'
 import AdminPage from './AdminPage'
-import { adminMockData } from '../data/adminMockData'
 
 vi.mock('../lib/api', () => ({
   api: {
@@ -22,6 +21,21 @@ vi.mock('../lib/api', () => ({
 
 import { api } from '../lib/api'
 
+const testAdminData = {
+  totales: {
+    entradas_web_total: 3420,
+    comision_norware_total: 684000,
+    eventos_activos: 4,
+    eventos_cancelados: 1,
+  },
+  por_evento: [
+    { evento_id: 1, evento_nombre: 'NEON PROTOCOL', boliche: 'NACHT', fecha: '2026-08-15', estado: 'publicado', entradas_web: 1245, comision_norware: 249000, recaudado_total_web: 5602500 },
+    { evento_id: 2, evento_nombre: 'AFTER DARK', boliche: 'HALO CLUB', fecha: '2026-08-22', estado: 'publicado', entradas_web: 890, comision_norware: 178000, recaudado_total_web: 3471000 },
+    { evento_id: 3, evento_nombre: 'RITUAL 909', boliche: 'SUBSUELO', fecha: '2026-08-29', estado: 'cancelado', entradas_web: 412, comision_norware: 82400, recaudado_total_web: 1977600 },
+    { evento_id: 4, evento_nombre: 'LATENCIA', boliche: 'DÓMINA', fecha: '2026-09-05', estado: 'publicado', entradas_web: 873, comision_norware: 174600, recaudado_total_web: 3666600 },
+  ],
+}
+
 function renderAdmin() {
   return render(
     <MemoryRouter>
@@ -38,7 +52,7 @@ describe('AdminPage', () => {
   beforeEach(() => vi.clearAllMocks())
 
   it('renders header with ADMIN branding', async () => {
-    api.get.mockResolvedValueOnce(adminMockData)
+    api.get.mockResolvedValueOnce(testAdminData)
     renderAdmin()
 
     await waitFor(() => {
@@ -55,7 +69,7 @@ describe('AdminPage', () => {
   })
 
   it('renders 4 KPI cards with data from API', async () => {
-    api.get.mockResolvedValueOnce(adminMockData)
+    api.get.mockResolvedValueOnce(testAdminData)
     renderAdmin()
 
     await waitFor(() => {
@@ -65,31 +79,28 @@ describe('AdminPage', () => {
   })
 
   it('displays correct KPI values', async () => {
-    api.get.mockResolvedValueOnce(adminMockData)
+    api.get.mockResolvedValueOnce(testAdminData)
     renderAdmin()
 
     await waitFor(() => {
-      // entradas_web_total = 3420
       expect(screen.getByText('3.420')).toBeInTheDocument()
-      // eventos_activos = 4
       expect(screen.getByText('4')).toBeInTheDocument()
-      // eventos_cancelados = 1
       expect(screen.getByText('1')).toBeInTheDocument()
     })
   })
 
   it('renders events table with rows', async () => {
-    api.get.mockResolvedValueOnce(adminMockData)
+    api.get.mockResolvedValueOnce(testAdminData)
     renderAdmin()
 
     await waitFor(() => {
       const rows = screen.getAllByTestId('admin-event-row')
-      expect(rows).toHaveLength(adminMockData.por_evento.length)
+      expect(rows).toHaveLength(testAdminData.por_evento.length)
     })
   })
 
   it('renders estado badges with correct colors', async () => {
-    api.get.mockResolvedValueOnce(adminMockData)
+    api.get.mockResolvedValueOnce(testAdminData)
     renderAdmin()
 
     await waitFor(() => {
@@ -103,7 +114,7 @@ describe('AdminPage', () => {
   })
 
   it('table container has overflow-x-auto for mobile', async () => {
-    api.get.mockResolvedValueOnce(adminMockData)
+    api.get.mockResolvedValueOnce(testAdminData)
     renderAdmin()
 
     await waitFor(() => {
@@ -111,18 +122,8 @@ describe('AdminPage', () => {
     })
   })
 
-  it('falls back to mock data when API fails', async () => {
-    api.get.mockRejectedValueOnce({ status: 0 })
-    renderAdmin()
-
-    await waitFor(() => {
-      const rows = screen.getAllByTestId('admin-event-row')
-      expect(rows).toHaveLength(adminMockData.por_evento.length)
-    })
-  })
-
   it('renders logout button', async () => {
-    api.get.mockResolvedValueOnce(adminMockData)
+    api.get.mockResolvedValueOnce(testAdminData)
     renderAdmin()
 
     await waitFor(() => {

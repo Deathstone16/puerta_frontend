@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import Icon from '../components/Icons'
 import Modal from '../components/Modal'
-import { formatMoney, getEvent, normalizeEvent } from '../data/mockData'
+import { formatMoney } from '../lib/format'
 import { api } from '../lib/api'
 
 function ListForm({ event, onClose }) {
@@ -48,18 +48,20 @@ function ListForm({ event, onClose }) {
 
 export default function EventDetailPage() {
   const { id } = useParams()
-  const [event, setEvent] = useState(getEvent(id))
+  const [event, setEvent] = useState(null)
   const [priceType, setPriceType] = useState('anticipada')
   const [combo, setCombo] = useState('entrada')
   const [modalOpen, setModalOpen] = useState(false)
 
   useEffect(() => {
     let active = true
-    api.get(`/eventos/${id}/`).then((data) => active && setEvent(normalizeEvent(data))).catch(() => {})
+    api.get(`/eventos/${id}/`).then((data) => active && setEvent(data)).catch(() => {})
     return () => { active = false }
   }, [id])
 
-  const base = event.precio_publicado + (priceType === 'puerta' ? 800 : 0) + (combo === 'tragos' ? 2500 : 0)
+  if (!event) return <section className="min-h-[540px] grid place-items-center"><p className="text-muted">Cargando evento...</p></section>
+
+  const base = (event.precio_publicado || 0) + (priceType === 'puerta' ? 800 : 0) + (combo === 'tragos' ? 2500 : 0)
 
   return (
     <>
@@ -75,7 +77,7 @@ export default function EventDetailPage() {
       <section className="py-12 md:py-16"><div className="container-page grid gap-10 lg:grid-cols-[1fr_430px]">
         <div>
           <p className="eyebrow mb-3">Sobre la noche</p><p className="max-w-2xl text-lg leading-8 text-muted">{event.descripcion}</p>
-          <h2 className="display-title mt-12 text-4xl">LINE-UP</h2><div className="mt-5 flex flex-wrap gap-2">{event.lineup.map((artist, i) => <span key={artist} className={`border px-4 py-3 font-mono text-xs font-bold uppercase ${i === 0 ? 'border-strobe text-strobe' : 'border-white/20 text-paper-text'}`}>{artist}</span>)}</div>
+          <h2 className="display-title mt-12 text-4xl">LINE-UP</h2><div className="mt-5 flex flex-wrap gap-2">{(event.line_up || event.lineup || []).map((artist, i) => <span key={artist} className={`border px-4 py-3 font-mono text-xs font-bold uppercase ${i === 0 ? 'border-strobe text-strobe' : 'border-white/20 text-paper-text'}`}>{artist}</span>)}</div>
           <div className="mt-12 grid gap-3 sm:grid-cols-3">{[['pin','CLUB',`${event.club} · ${event.ciudad}`],['clock','HORARIO',`${event.horario} — 06:00`],['shield','INGRESO','DNI físico · +18']].map(([icon,label,value]) => <div className="panel p-4" key={label}><Icon name={icon} className="mb-5 text-uv"/><p className="eyebrow">{label}</p><p className="mt-2 text-sm font-semibold">{value}</p></div>)}</div>
         </div>
         <aside className="h-fit border border-white/15 bg-floor p-5 lg:sticky lg:top-24">

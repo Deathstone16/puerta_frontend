@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { formatMoney } from '../data/mockData'
+import { formatMoney } from '../lib/format'
 import Icon from './Icons'
 
 const emptyPerson = () => ({ nombre: '', apellido: '', dni: '', metodo_pago: 'efectivo' })

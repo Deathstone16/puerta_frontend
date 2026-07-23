@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { formatMoney } from '../data/mockData'
+import { formatMoney } from '../lib/format'
 import Icon from './Icons'
 
 export default function EventCard({ event, featured = false }) {

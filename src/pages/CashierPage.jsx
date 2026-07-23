@@ -3,25 +3,10 @@ import CashierSaleSheet from '../components/CashierSaleSheet'
 import GuardQrScanner from '../components/GuardQrScanner'
 import Icon from '../components/Icons'
 import { useAuth } from '../context/AuthContext'
-import { activeEvent, formatMoney } from '../data/mockData'
-import {
-  cashierDemoCapacity,
-  cashierDemoHints,
-  createDemoCashierTransaction,
-  findDemoCashierPersonByDni,
-  parseCashierQr,
-  undoDemoCashierTransaction,
-} from '../data/cashierMockData'
+import { formatMoney } from '../lib/format'
 import { api } from '../lib/api'
 
 const TEN_MINUTES = 10 * 60
-
-/** @type {{ id: number, club: string, precio_publicado: number }} */
-const CASHIER_EVENT_FALLBACK = Object.freeze({
-  id: Number(activeEvent.id),
-  club: String(activeEvent.club),
-  precio_publicado: Number(activeEvent.precio_publicado),
-})
 
 function resolveCashierEvent(session) {
   const suppliedEvent = session?.evento && typeof session.evento === 'object' ? session.evento : {}
@@ -29,11 +14,11 @@ function resolveCashierEvent(session) {
   const suppliedPrice = Number(suppliedEvent.precio_publicado ?? suppliedEvent.precio)
 
   return {
-    id: Number.isFinite(suppliedId) && suppliedId > 0 ? suppliedId : CASHIER_EVENT_FALLBACK.id,
-    club: String(suppliedEvent.club || suppliedEvent.nombre || CASHIER_EVENT_FALLBACK.club),
+    id: Number.isFinite(suppliedId) && suppliedId > 0 ? suppliedId : null,
+    club: String(suppliedEvent.club || suppliedEvent.nombre || 'CAJA'),
     precio_publicado: Number.isFinite(suppliedPrice) && suppliedPrice >= 0
       ? suppliedPrice
-      : CASHIER_EVENT_FALLBACK.precio_publicado,
+      : 0,
   }
 }
 
@@ -86,18 +71,13 @@ export default function CashierPage() {
       const data = await api.get(`/dashboard/aforo/${eventId}/`, { signal: controller.signal })
       if (capacityRequestRef.current.sequence !== sequence) return
       setCapacity(data)
-      setCapacityStatus(session?.isDemo ? 'demo' : 'live')
+      setCapacityStatus('live')
     } catch {
       if (controller.signal.aborted || capacityRequestRef.current.sequence !== sequence) return
-      if (session?.isDemo) {
-        setCapacity((current) => current || cashierDemoCapacity)
-        setCapacityStatus('demo')
-      } else {
-        setCapacity(null)
-        setCapacityStatus('unavailable')
-      }
+      setCapacity(null)
+      setCapacityStatus('unavailable')
     }
-  }, [eventId, session?.isDemo])
+  }, [eventId])
 
   useEffect(() => {
     setCapacity(null)
@@ -128,51 +108,54 @@ export default function CashierPage() {
   }, [])
 
   const handleQrScan = useCallback((qrCode) => {
-    const person = parseCashierQr(qrCode)
-    if (!person) {
-      setSelected(null)
-      setInlineError('QR desconocido. No se encontró una entrada válida para caja.')
-      return
-    }
-    setSelected(person)
+    // QR scan triggers API identification directly
+    setSelected(null)
     setInlineError('')
+    setBusy(true)
+    api.post('/puerta/cajera/escanear-qr/', { qr_code: qrCode })
+      .then((person) => { setSelected(person); setInlineError('') })
+      .catch((error) => { setInlineError(error.message || 'QR desconocido. No se encontró una entrada válida para caja.') })
+      .finally(() => setBusy(false))
   }, [])
 
-  const searchDni = (event) => {
+  const searchDni = async (event) => {
     event.preventDefault()
     if (!/^\d{7,8}$/.test(dni)) {
       setInlineError('Ingresá un DNI válido de 7 u 8 dígitos.')
       return
     }
-    if (!session?.isDemo) {
-      setSelected(null)
-      setInlineError('La búsqueda por DNI no está disponible: la API no documenta un endpoint para esta operación.')
-      return
-    }
-    const person = findDemoCashierPersonByDni(dni)
-    if (!person) {
-      setSelected(null)
-      setInlineError('No encontramos una persona pendiente de cobro con ese DNI.')
-      return
-    }
-    setSelected(person)
+    setBusy(true)
     setInlineError('')
+    try {
+      const person = await api.get(`/puerta/cajera/buscar-dni/${dni}/`)
+      if (!person) {
+        setSelected(null)
+        setInlineError('No encontramos una persona pendiente de cobro con ese DNI.')
+      } else {
+        setSelected(person)
+        setInlineError('')
+      }
+    } catch (error) {
+      setSelected(null)
+      setInlineError(error.message || 'No encontramos una persona pendiente de cobro con ese DNI.')
+    } finally {
+      setBusy(false)
+    }
   }
 
   const adjustCapacity = useCallback((delta) => {
     setCapacity((current) => {
-      const baseCapacity = current || (session?.isDemo ? cashierDemoCapacity : null)
-      if (!baseCapacity) return current
-      const ingresados = Math.max(0, Number(baseCapacity.ingresados || 0) + delta)
+      if (!current) return current
+      const ingresados = Math.max(0, Number(current.ingresados || 0) + delta)
       return {
-        ...baseCapacity,
+        ...current,
         ingresados,
-        porcentaje: Math.round((ingresados / Number(baseCapacity.aforo_max || 1)) * 100),
+        porcentaje: Math.round((ingresados / Number(current.aforo_max || 1)) * 100),
       }
     })
-  }, [session?.isDemo])
+  }, [])
 
-  const registerSuccess = (result, type, detail, { addedEntries = 1, usedFallback = false } = {}) => {
+  const registerSuccess = (result, type, detail, { addedEntries = 1 } = {}) => {
     const createdItems = Array.isArray(result.creados) ? result.creados : []
     const transactionId = result.id || result.operacion_id || createdItems[0]?.id
     const transaction = transactionId ? {
@@ -181,7 +164,6 @@ export default function CashierPage() {
       createdAt: Date.now(),
       detail,
       addedEntries,
-      usedFallback,
     } : null
     setLastTransaction(transaction)
     setUndoRemaining(transaction ? TEN_MINUTES : 0)
@@ -199,16 +181,9 @@ export default function CashierPage() {
     setInlineError('')
     try {
       let result
-      let usedFallback = false
-      try {
-        if (type === 'web') result = await api.post(`/puerta/cajera/escanear-web/${selected.id}/`, {})
-        else result = await api.post(`/puerta/cajera/cobrar-lista/${selected.id}/`, { metodo_pago: paymentMethod, monto_pagado: Number(selected.monto_pago || ticketPrice) })
-      } catch (error) {
-        if (error.status !== 0 || !session?.isDemo) throw error
-        result = createDemoCashierTransaction(type, { metodo_pago: paymentMethod })
-        usedFallback = true
-      }
-      registerSuccess(result, type, `${selected.nombre} ${selected.apellido}`, { addedEntries: 1, usedFallback })
+      if (type === 'web') result = await api.post(`/puerta/cajera/escanear-web/${selected.id}/`, {})
+      else result = await api.post(`/puerta/cajera/cobrar-lista/${selected.id}/`, { metodo_pago: paymentMethod, monto_pagado: Number(selected.monto_pago || ticketPrice) })
+      registerSuccess(result, type, `${selected.nombre} ${selected.apellido}`, { addedEntries: 1 })
     } catch (error) {
       setFeedback({ type: 'error', message: error.message || 'No pudimos registrar la operación.', detail: error.data?.detail || 'Revisá el estado del ingreso e intentá otra vez.' })
     } finally {
@@ -221,17 +196,10 @@ export default function CashierPage() {
     try {
       const payload = { evento_id: eventId, personas: people }
       let result
-      let usedFallback = false
-      try {
-        result = await api.post('/puerta/cajera/venta-general/', payload)
-      } catch (error) {
-        if (error.status !== 0 || !session?.isDemo) throw error
-        result = createDemoCashierTransaction('venta', payload)
-        usedFallback = true
-      }
+      result = await api.post('/puerta/cajera/venta-general/', payload)
       setSaleOpen(false)
       const detail = `${people.length} entrada${people.length === 1 ? '' : 's'} · ${formatMoney(people.length * ticketPrice)}`
-      registerSuccess(result, 'venta', detail, { addedEntries: people.length, usedFallback })
+      registerSuccess(result, 'venta', detail, { addedEntries: people.length })
     } catch (error) {
       setSaleOpen(false)
       setFeedback({ type: 'error', message: error.message || 'No pudimos completar la venta.', detail: error.data?.detail || 'Revisá los datos e intentá otra vez.' })
@@ -245,24 +213,11 @@ export default function CashierPage() {
     if (!transaction?.id || remainingSeconds <= 0 || busy) return
     setBusy(true)
     try {
-      let result
-      let usedFallback = transaction.usedFallback === true
-      if (usedFallback) {
-        result = undoDemoCashierTransaction(transaction.id)
-      } else {
-        try {
-          result = await api.post(`/puerta/cajera/deshacer/${transaction.id}/`, {})
-        } catch (error) {
-          if (error.status !== 0 || !session?.isDemo) throw error
-          result = undoDemoCashierTransaction(transaction.id)
-          usedFallback = true
-        }
-      }
+      const result = await api.post(`/puerta/cajera/deshacer/${transaction.id}/`, {})
       setLastTransaction(null)
       setUndoRemaining(0)
       setFeedback({ type: 'undone', message: result.mensaje || 'Operación deshecha', detail: transaction.detail })
-      if (usedFallback) adjustCapacity(-Number(transaction.addedEntries || 0))
-      else loadCapacity()
+      loadCapacity()
     } catch (error) {
       setFeedback({ type: 'error', message: error.message || 'No pudimos deshacer la operación.', detail: 'El plazo puede haber vencido.' })
     } finally { setBusy(false) }
@@ -287,9 +242,9 @@ export default function CashierPage() {
 
   <section className="border-b border-white/10 bg-floor px-4 py-4"><div className="flex items-end justify-between"><div><div className="flex items-center gap-2"><span className={capacityStatus === 'live' ? 'status-dot' : 'size-2 bg-muted'}/><p className="font-mono text-[9px] font-bold uppercase tracking-[.16em] text-muted">{capacityLabel}</p></div><p className="mt-2 font-display text-4xl text-strobe">{capacity ? capacity.ingresados : '—'}<span className="ml-2 text-xl text-muted">/ {capacity ? capacity.aforo_max : '—'}</span></p></div><div className="text-right"><p className="font-display text-3xl">{occupancy == null ? '—' : `${occupancy}%`}</p><p className="font-mono text-[9px] uppercase text-muted">ocupación</p></div></div><div className="mt-3 h-2 bg-void"><div className="h-full bg-gradient-to-r from-uv to-strobe transition-[width] duration-500" style={{ width: `${occupancy || 0}%` }}/></div></section>
 
-  <div className="p-4 pb-[max(28px,env(safe-area-inset-bottom))]"><section aria-labelledby="scanner-title"><div className="mb-3 flex items-end justify-between"><div><p className="eyebrow">Identificar</p><h1 id="scanner-title" className="display-title mt-2 text-3xl">ESCANEAR ENTRADA</h1></div><span className="font-mono text-[9px] uppercase text-emerald-300">Cámara activa</span></div><GuardQrScanner key={scannerKey} active={!busy && !feedback && !saleOpen} onScan={handleQrScan}/>{session?.isDemo && <p className="mt-2 text-center font-mono text-[9px] uppercase text-muted">QR demo: {cashierDemoHints.webQr}</p>}</section>
+  <div className="p-4 pb-[max(28px,env(safe-area-inset-bottom))]"><section aria-labelledby="scanner-title"><div className="mb-3 flex items-end justify-between"><div><p className="eyebrow">Identificar</p><h1 id="scanner-title" className="display-title mt-2 text-3xl">ESCANEAR ENTRADA</h1></div><span className="font-mono text-[9px] uppercase text-emerald-300">Cámara activa</span></div><GuardQrScanner key={scannerKey} active={!busy && !feedback && !saleOpen} onScan={handleQrScan}/></section>
 
-  <form onSubmit={searchDni} className="mt-4 border border-white/15 bg-floor p-3"><label className="font-mono text-[9px] font-bold uppercase tracking-wider text-muted">Buscar lista por DNI</label><div className="mt-2 flex gap-2"><input inputMode="numeric" value={dni} onChange={(event) => { setDni(event.target.value.replace(/\D/g, '').slice(0, 8)); setInlineError('') }} className="field min-h-14 flex-1 text-center text-lg tracking-wider" placeholder="38 987 654"/><button disabled={busy} className="grid min-h-14 w-16 place-items-center bg-white text-void disabled:opacity-40" aria-label="Buscar DNI"><Icon name="search" size={22}/></button></div>{session?.isDemo && <p className="mt-2 font-mono text-[9px] uppercase text-muted">Demo: {cashierDemoHints.listDni}</p>}</form>
+  <form onSubmit={searchDni} className="mt-4 border border-white/15 bg-floor p-3"><label className="font-mono text-[9px] font-bold uppercase tracking-wider text-muted">Buscar lista por DNI</label><div className="mt-2 flex gap-2"><input inputMode="numeric" value={dni} onChange={(event) => { setDni(event.target.value.replace(/\D/g, '').slice(0, 8)); setInlineError('') }} className="field min-h-14 flex-1 text-center text-lg tracking-wider" placeholder="38 987 654"/><button disabled={busy} className="grid min-h-14 w-16 place-items-center bg-white text-void disabled:opacity-40" aria-label="Buscar DNI"><Icon name="search" size={22}/></button></div></form>
 
   {inlineError && <div className="mt-4 border border-door-red/50 bg-door-red/10 p-4"><p className="font-mono text-xs font-bold uppercase text-door-red">Atención</p><p className="mt-2 text-sm leading-5">{inlineError}</p></div>}
 

@@ -3,7 +3,6 @@ import { Link, useParams } from 'react-router-dom'
 import Icon from '../components/Icons'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../lib/api'
-import { getDemoRrppPanel } from '../data/rrppMockData'
 
 const EMPTY_FORM = { nombre: '', apellido: '', dni: '' }
 
@@ -29,19 +28,12 @@ export default function RrppListaPage() {
         setEvento(ev)
         setGuests(ev.estadisticas?.invitados_recientes || ev.invitados_recientes || ev.invitados || [])
       }
-    } catch (error) {
-      if (session?.isDemo && error?.status === 0) {
-        const demoData = getDemoRrppPanel()
-        const ev = demoData.find((e) => String(e.id) === String(eventoId))
-        if (ev) {
-          setEvento(ev)
-          setGuests(ev.invitados_recientes || [])
-        }
-      }
+    } catch {
+      // API unavailable — keep empty state
     } finally {
       setLoading(false)
     }
-  }, [eventoId, session?.isDemo])
+  }, [eventoId])
 
   useEffect(() => { loadData() }, [loadData])
 

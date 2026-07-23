@@ -2,8 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Icon from '../components/Icons'
 import GuestApprovalModal from '../components/GuestApprovalModal'
 import { useAuth } from '../context/AuthContext'
-import { formatMoney } from '../data/mockData'
-import { addDemoRrppGuest, getDemoRrppPanel } from '../data/rrppMockData'
+import { formatMoney } from '../lib/format'
 import { api } from '../lib/api'
 
 const EMPTY_FORM = { nombre: '', apellido: '', dni: '' }
@@ -155,16 +154,10 @@ export default function RrppPage() {
       setPanelError('')
     } catch (error) {
       if (controller.signal.aborted || requestRef.current.sequence !== sequence) return
-      if (session?.isDemo && error?.status === 0) {
-        setEvents(normalizePanelResponse(getDemoRrppPanel()))
-        setPanelStatus('demo')
-        setPanelError('')
-      } else {
-        setPanelStatus('error')
-        setPanelError(errorDetail(error, 'No pudimos actualizar los eventos asignados. Se conservan los últimos datos disponibles.'))
-      }
+      setPanelStatus('error')
+      setPanelError(errorDetail(error, 'No pudimos actualizar los eventos asignados. Se conservan los últimos datos disponibles.'))
     }
-  }, [session?.isDemo])
+  }, [])
 
   useEffect(() => {
     setPanelStatus('loading')
@@ -267,19 +260,10 @@ export default function RrppPage() {
     setFormError('')
     setFeedback(null)
     try {
-      let result
-      let usedDemoFallback = false
-      try {
-        result = await api.post('/rrpp/anotar-invitado/', payload)
-      } catch (error) {
-        if (!session?.isDemo || error?.status !== 0) throw error
-        result = addDemoRrppGuest(selectedEvent.id, payload)
-        usedDemoFallback = true
-      }
+      const result = await api.post('/rrpp/anotar-invitado/', payload)
 
       setEvents((current) => current.map((item) => {
         if (item._key !== selectedEvent._key) return item
-        if (usedDemoFallback && result?.evento) return normalizeRrppEvent(result.evento, 0)
         const returnedEvent = result?.evento && typeof result.evento === 'object'
           ? normalizeRrppEvent({ ...item, ...result.evento }, 0)
           : null

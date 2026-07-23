@@ -1,11 +1,16 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import NochesTab from './NochesTab'
-import { mockEventos } from '../../data/dashboardMockData'
+
+const testEventos = [
+  { id: 1, nombre: 'NEON PROTOCOL', fecha: '2026-08-15T23:59:00-03:00', precio_base: 3800, precio_publicado: 4500, aforo_max: 800, estado: 'publicado', line_up: ['Cata Ferreyra', 'Lorenzo', 'NIKKA'] },
+  { id: 2, nombre: 'AFTER DARK', fecha: '2026-08-22T23:30:00-03:00', precio_base: 3200, precio_publicado: 3900, aforo_max: 650, estado: 'publicado', line_up: ['Mora', 'Santi Paz'] },
+  { id: 3, nombre: 'RITUAL 909', fecha: '2026-08-29T23:45:00-03:00', precio_base: 4000, precio_publicado: 4800, aforo_max: 500, estado: 'cancelado', line_up: ['VNTM', 'Juno'] },
+]
 
 describe('NochesTab', () => {
   const defaultProps = {
-    eventos: mockEventos,
+    eventos: testEventos,
     onEdit: vi.fn(),
     onCancel: vi.fn(),
     onCreate: vi.fn(),
@@ -15,7 +20,7 @@ describe('NochesTab', () => {
     render(<NochesTab {...defaultProps} />)
 
     const cards = screen.getAllByTestId('evento-card')
-    expect(cards).toHaveLength(mockEventos.length)
+    expect(cards).toHaveLength(testEventos.length)
   })
 
   it('displays event names', () => {
@@ -65,7 +70,7 @@ describe('NochesTab', () => {
 
     const editBtns = screen.getAllByTestId('editar-btn')
     fireEvent.click(editBtns[0])
-    expect(defaultProps.onEdit).toHaveBeenCalledWith(mockEventos[0])
+    expect(defaultProps.onEdit).toHaveBeenCalledWith(testEventos[0])
   })
 
   it('calls onCancel with eventoId when cancel button is clicked', () => {
@@ -73,7 +78,7 @@ describe('NochesTab', () => {
 
     const cancelBtns = screen.getAllByTestId('cancelar-btn')
     fireEvent.click(cancelBtns[0])
-    expect(defaultProps.onCancel).toHaveBeenCalledWith(mockEventos[0].id)
+    expect(defaultProps.onCancel).toHaveBeenCalledWith(testEventos[0].id)
   })
 
   it('disables cancel button for already-cancelled events', () => {

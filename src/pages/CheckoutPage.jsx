@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import Icon from '../components/Icons'
 import { usePurchase } from '../context/PurchaseContext'
-import { formatMoney, getEvent, normalizeEvent } from '../data/mockData'
+import { formatMoney } from '../lib/format'
 import { api } from '../lib/api'
 
 export default function CheckoutPage() {
@@ -10,21 +10,24 @@ export default function CheckoutPage() {
   const location = useLocation()
   const navigate = useNavigate()
   const { setSelection } = usePurchase()
-  const [event, setEvent] = useState(getEvent(id))
+  const [event, setEvent] = useState(null)
   const [buyer, setBuyer] = useState({ nombre: '', apellido: '', dni: '', email: '' })
   const [status, setStatus] = useState('idle')
   const [error, setError] = useState('')
   const choice = location.state || { priceType: 'anticipada', combo: 'entrada' }
 
-  useEffect(() => { api.get(`/eventos/${id}/`).then((data) => setEvent(normalizeEvent(data))).catch(() => {}) }, [id])
+  useEffect(() => { api.get(`/eventos/${id}/`).then((data) => setEvent(data)).catch(() => {}) }, [id])
   const amounts = useMemo(() => {
-    const ticket = event.precio_base || Math.round(event.precio_publicado * .82)
+    if (!event) return { ticket: 0, drink: 0, mp: 0, service: 0, total: 0 }
+    const ticket = event.precio_base || Math.round((event.precio_publicado || 0) * .82)
     const drink = choice.combo === 'tragos' ? 2500 : 0
     const mp = Math.round(ticket * .05)
-    const service = Math.max(250, event.precio_publicado - ticket) + drink
+    const service = Math.max(250, (event.precio_publicado || 0) - ticket) + drink
     return { ticket, drink, mp, service, total: ticket + service + mp }
   }, [event, choice.combo])
   const update = (key) => (e) => setBuyer((current) => ({ ...current, [key]: e.target.value }))
+
+  if (!event) return <section className="min-h-[calc(100vh-64px)] py-8 md:py-14"><div className="container-page max-w-5xl"><p className="text-muted">Cargando evento...</p></div></section>
 
   const pay = async (e) => {
     e.preventDefault()

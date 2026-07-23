@@ -1,13 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import AuditoriaRrppTab from './AuditoriaRrppTab'
-import { mockRankingRrpp } from '../../data/dashboardMockData'
 
 vi.mock('../../lib/api', () => ({
   api: { get: vi.fn(), post: vi.fn(), patch: vi.fn() },
 }))
 
 import { api } from '../../lib/api'
+
+const testRankingRrpp = [
+  { rrpp_id: 1, nombre: 'Lucía Fernández', anotados: 28, ingresados: 21, tasa_conversion: 75, recaudado_total: 94500 },
+  { rrpp_id: 2, nombre: 'Matías Gomez', anotados: 15, ingresados: 12, tasa_conversion: 80, recaudado_total: 54000 },
+  { rrpp_id: 3, nombre: 'Valentina Cruz', anotados: 42, ingresados: 38, tasa_conversion: 90, recaudado_total: 171000 },
+  { rrpp_id: 4, nombre: 'Bruno Díaz', anotados: 9, ingresados: 5, tasa_conversion: 56, recaudado_total: 22500 },
+]
 
 const baseProps = {
   eventoId: 1,
@@ -19,7 +25,7 @@ describe('AuditoriaRrppTab', () => {
   beforeEach(() => vi.clearAllMocks())
 
   it('fetches ranking data for the given eventoId', async () => {
-    api.get.mockResolvedValueOnce(mockRankingRrpp)
+    api.get.mockResolvedValueOnce(testRankingRrpp)
     render(<AuditoriaRrppTab {...baseProps} />)
 
     await waitFor(() => {
@@ -28,17 +34,17 @@ describe('AuditoriaRrppTab', () => {
   })
 
   it('renders a row for each RRPP', async () => {
-    api.get.mockResolvedValueOnce(mockRankingRrpp)
+    api.get.mockResolvedValueOnce(testRankingRrpp)
     render(<AuditoriaRrppTab {...baseProps} />)
 
     await waitFor(() => {
       const rows = screen.getAllByTestId('ranking-row')
-      expect(rows).toHaveLength(mockRankingRrpp.length)
+      expect(rows).toHaveLength(testRankingRrpp.length)
     })
   })
 
   it('sorts rows by recaudado_total descending', async () => {
-    api.get.mockResolvedValueOnce(mockRankingRrpp)
+    api.get.mockResolvedValueOnce(testRankingRrpp)
     render(<AuditoriaRrppTab {...baseProps} />)
 
     await waitFor(() => {
@@ -84,7 +90,7 @@ describe('AuditoriaRrppTab', () => {
   })
 
   it('renders totals row', async () => {
-    api.get.mockResolvedValueOnce(mockRankingRrpp)
+    api.get.mockResolvedValueOnce(testRankingRrpp)
     render(<AuditoriaRrppTab {...baseProps} />)
 
     await waitFor(() => {
@@ -105,18 +111,17 @@ describe('AuditoriaRrppTab', () => {
     })
   })
 
-  it('falls back to mock data on network error', async () => {
+  it('shows empty state on network error', async () => {
     api.get.mockRejectedValueOnce({ status: 0 })
     render(<AuditoriaRrppTab {...baseProps} />)
 
     await waitFor(() => {
-      const rows = screen.getAllByTestId('ranking-row')
-      expect(rows).toHaveLength(mockRankingRrpp.length)
+      expect(screen.getByTestId('empty-state')).toBeInTheDocument()
     })
   })
 
   it('renders Alta RRPP and Asignar RRPP buttons', async () => {
-    api.get.mockResolvedValueOnce(mockRankingRrpp)
+    api.get.mockResolvedValueOnce(testRankingRrpp)
     render(<AuditoriaRrppTab {...baseProps} />)
 
     expect(screen.getByTestId('btn-alta-rrpp')).toBeInTheDocument()
@@ -124,7 +129,7 @@ describe('AuditoriaRrppTab', () => {
   })
 
   it('calls onCreateRrpp when Alta RRPP is clicked', () => {
-    api.get.mockResolvedValueOnce(mockRankingRrpp)
+    api.get.mockResolvedValueOnce(testRankingRrpp)
     render(<AuditoriaRrppTab {...baseProps} />)
 
     fireEvent.click(screen.getByTestId('btn-alta-rrpp'))
@@ -132,7 +137,7 @@ describe('AuditoriaRrppTab', () => {
   })
 
   it('calls onAsignarRrpp when Asignar RRPP is clicked', () => {
-    api.get.mockResolvedValueOnce(mockRankingRrpp)
+    api.get.mockResolvedValueOnce(testRankingRrpp)
     render(<AuditoriaRrppTab {...baseProps} />)
 
     fireEvent.click(screen.getByTestId('btn-asignar-rrpp'))

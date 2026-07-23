@@ -1,5 +1,5 @@
 import Modal from './Modal'
-import { formatMoney } from '../data/mockData'
+import { formatMoney } from '../lib/format'
 
 /**
  * PriceBreakdownModal — Shows price breakdown after event creation.

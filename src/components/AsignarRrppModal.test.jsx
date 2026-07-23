@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import AsignarRrppModal from './AsignarRrppModal'
-import { mockEventos } from '../data/dashboardMockData'
 
 vi.mock('../lib/api', () => ({
   api: { get: vi.fn(), post: vi.fn(), patch: vi.fn() },
@@ -9,12 +8,18 @@ vi.mock('../lib/api', () => ({
 
 import { api } from '../lib/api'
 
+const testEventos = [
+  { id: 1, nombre: 'NEON PROTOCOL', fecha: '2026-08-15T23:59:00-03:00', estado: 'publicado' },
+  { id: 2, nombre: 'AFTER DARK', fecha: '2026-08-22T23:30:00-03:00', estado: 'publicado' },
+  { id: 3, nombre: 'RITUAL 909', fecha: '2026-08-29T23:45:00-03:00', estado: 'cancelado' },
+]
+
 const mockRrppList = [
   { id: 1, nombre: 'Lucía', apellido: 'Fernández', username: 'lucia_rrpp' },
   { id: 2, nombre: 'Matías', apellido: 'Gomez', username: 'matias_rrpp' },
 ]
 
-const baseProps = { open: true, onClose: vi.fn(), eventos: mockEventos }
+const baseProps = { open: true, onClose: vi.fn(), eventos: testEventos }
 
 describe('AsignarRrppModal', () => {
   beforeEach(() => {

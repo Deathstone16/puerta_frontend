@@ -2,8 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import GuardQrScanner from '../components/GuardQrScanner'
 import Icon from '../components/Icons'
 import { useAuth } from '../context/AuthContext'
-import { activeEvent } from '../data/mockData'
-import { applyDemoGuardAction, findDemoAttendee, guardDemoCapacity } from '../data/guardMockData'
 import { api } from '../lib/api'
 
 const REJECTION_REASONS = ['DNI no coincide', 'Entrada ya utilizada', 'Fuera de horario', 'Otro motivo']
@@ -58,9 +56,9 @@ function RejectSheet({ attendee, busy, onCancel, onConfirm }) {
 
 export default function GuardPage() {
   const { session, logout } = useAuth()
-  const eventId = session?.evento_id || activeEvent.id
+  const eventId = session?.evento_id
   const [mode, setMode] = useState('scan')
-  const [capacity, setCapacity] = useState(guardDemoCapacity)
+  const [capacity, setCapacity] = useState(null)
   const [capacityOffline, setCapacityOffline] = useState(false)
   const [dni, setDni] = useState('')
   const [attendee, setAttendee] = useState(null)
@@ -70,6 +68,7 @@ export default function GuardPage() {
   const [rejecting, setRejecting] = useState(false)
 
   const occupancy = useMemo(() => {
+    if (!capacity) return 0
     if (capacity.porcentaje != null) return Math.min(Number(capacity.porcentaje), 100)
     return Math.min(Math.round((Number(capacity.ingresados || 0) / Number(capacity.aforo_max || 1)) * 100), 100)
   }, [capacity])
@@ -81,7 +80,6 @@ export default function GuardPage() {
       setCapacityOffline(false)
     } catch (error) {
       if (error.status === 0) {
-        setCapacity((current) => current || guardDemoCapacity)
         setCapacityOffline(true)
       }
     }
@@ -98,14 +96,7 @@ export default function GuardPage() {
     setBusy(true)
     setInlineError('')
     try {
-      let result
-      try {
-        result = await api.post('/puerta/guardia/escanear/', payload)
-      } catch (error) {
-        if (error.status !== 0) throw error
-        result = findDemoAttendee(payload)
-        if (!result) throw new Error('No encontramos una persona con esos datos.')
-      }
+      const result = await api.post('/puerta/guardia/escanear/', payload)
       setAttendee(result)
     } catch (error) {
       setInlineError(error.message || 'No pudimos identificar la entrada.')
@@ -136,15 +127,9 @@ export default function GuardPage() {
   const executeAction = async (action, motivo = '') => {
     setBusy(true)
     try {
-      let result
-      try {
-        result = action === 'aprobar'
-          ? await api.post(`/puerta/guardia/aprobar/${attendee.id}/`, {})
-          : await api.post(`/puerta/guardia/rebotar/${attendee.id}/`, { motivo })
-      } catch (error) {
-        if (error.status !== 0) throw error
-        result = applyDemoGuardAction(attendee, action, motivo)
-      }
+      const result = action === 'aprobar'
+        ? await api.post(`/puerta/guardia/aprobar/${attendee.id}/`, {})
+        : await api.post(`/puerta/guardia/rebotar/${attendee.id}/`, { motivo })
 
       if (action === 'aprobar') {
         setCapacity((current) => ({
@@ -177,11 +162,11 @@ export default function GuardPage() {
     <main className="min-h-[100dvh] bg-black sm:py-5">
       <div className="relative mx-auto min-h-[100dvh] w-full max-w-[430px] overflow-hidden bg-void sm:min-h-[calc(100dvh-40px)] sm:border sm:border-white/10">
         <header className="sticky top-0 z-40 border-b border-white/10 bg-void/95 px-4 pb-3 pt-[max(12px,env(safe-area-inset-top))] backdrop-blur">
-          <div className="flex items-center gap-3"><div className="grid size-10 place-items-center border border-uv text-uv"><Icon name="shield" size={21} /></div><div><p className="font-display text-lg leading-none">GUARDIA · {activeEvent.club}</p><p className="mt-1 font-mono text-[9px] uppercase tracking-[.16em] text-muted">{session?.nombre} · Puerta principal</p></div><button type="button" onClick={logout} className="ml-auto grid size-10 place-items-center border border-white/15 text-muted" aria-label="Cerrar sesión"><Icon name="logout" size={18} /></button></div>
+          <div className="flex items-center gap-3"><div className="grid size-10 place-items-center border border-uv text-uv"><Icon name="shield" size={21} /></div><div><p className="font-display text-lg leading-none">GUARDIA · {session?.evento_nombre || 'PUERTA'}</p><p className="mt-1 font-mono text-[9px] uppercase tracking-[.16em] text-muted">{session?.nombre} · Puerta principal</p></div><button type="button" onClick={logout} className="ml-auto grid size-10 place-items-center border border-white/15 text-muted" aria-label="Cerrar sesión"><Icon name="logout" size={18} /></button></div>
         </header>
 
         <section className="border-b border-white/10 bg-floor px-4 py-4" aria-label="Aforo actual">
-          <div className="flex items-end justify-between"><div><div className="flex items-center gap-2"><span className="status-dot"/><p className="font-mono text-[9px] font-bold uppercase tracking-[.16em] text-muted">Aforo en vivo {capacityOffline && '· demo'}</p></div><p className="mt-2 font-display text-4xl text-strobe">{capacity.ingresados}<span className="ml-2 text-xl text-muted">/ {capacity.aforo_max}</span></p></div><div className="text-right"><p className="font-display text-3xl">{occupancy}%</p><p className="font-mono text-[9px] uppercase text-muted">{capacity.pendientes} pendientes</p></div></div>
+          <div className="flex items-end justify-between"><div><div className="flex items-center gap-2"><span className="status-dot"/><p className="font-mono text-[9px] font-bold uppercase tracking-[.16em] text-muted">Aforo en vivo {capacityOffline && '· demo'}</p></div><p className="mt-2 font-display text-4xl text-strobe">{capacity ? capacity.ingresados : '—'}<span className="ml-2 text-xl text-muted">/ {capacity ? capacity.aforo_max : '—'}</span></p></div><div className="text-right"><p className="font-display text-3xl">{occupancy}%</p><p className="font-mono text-[9px] uppercase text-muted">{capacity ? capacity.pendientes : 0} pendientes</p></div></div>
           <div className="mt-3 h-2 bg-void"><div className="h-full bg-gradient-to-r from-uv to-strobe transition-[width] duration-500" style={{ width: `${occupancy}%` }}/></div>
         </section>
 
@@ -193,7 +178,7 @@ export default function GuardPage() {
 
           {!attendee && mode === 'scan' && <div className="mt-4"><GuardQrScanner active={!busy && mode === 'scan'} onScan={handleQrScan}/><div className="mt-4 flex items-start gap-3 border-l-2 border-strobe bg-strobe/5 p-3"><Icon name="ticket" size={18} className="mt-0.5 shrink-0 text-strobe"/><p className="font-mono text-[10px] uppercase leading-5 text-muted">Apuntá al QR de la entrada. La lectura es automática.</p></div></div>}
 
-          {!attendee && mode === 'dni' && <form onSubmit={handleDniSearch} className="mt-4 border border-white/15 bg-floor p-5"><p className="eyebrow">Alternativa manual</p><h1 className="display-title mt-3 text-4xl">BUSCAR POR DNI</h1><p className="mt-3 text-sm leading-6 text-muted">Ingresá el documento sin puntos. Buscamos la entrada o la persona anotada en lista.</p><label className="mt-7 block"><span className="mb-2 block font-mono text-[9px] font-bold uppercase tracking-wider text-muted">DNI del asistente</span><input autoFocus inputMode="numeric" autoComplete="off" value={dni} onChange={(event) => { setDni(event.target.value.replace(/\D/g, '').slice(0, 8)); setInlineError('') }} className="field min-h-16 text-center font-mono text-xl tracking-[.12em]" placeholder="40 111 222"/></label><button disabled={busy} className="btn-primary mt-4 min-h-16 w-full">{busy ? 'BUSCANDO...' : 'BUSCAR EN LISTA'}<Icon name="search" size={18}/></button>{session?.isDemo && <p className="mt-4 text-center font-mono text-[9px] uppercase text-muted">Demo: probá con 40111222</p>}</form>}
+          {!attendee && mode === 'dni' && <form onSubmit={handleDniSearch} className="mt-4 border border-white/15 bg-floor p-5"><p className="eyebrow">Alternativa manual</p><h1 className="display-title mt-3 text-4xl">BUSCAR POR DNI</h1><p className="mt-3 text-sm leading-6 text-muted">Ingresá el documento sin puntos. Buscamos la entrada o la persona anotada en lista.</p><label className="mt-7 block"><span className="mb-2 block font-mono text-[9px] font-bold uppercase tracking-wider text-muted">DNI del asistente</span><input autoFocus inputMode="numeric" autoComplete="off" value={dni} onChange={(event) => { setDni(event.target.value.replace(/\D/g, '').slice(0, 8)); setInlineError('') }} className="field min-h-16 text-center font-mono text-xl tracking-[.12em]" placeholder="40 111 222"/></label><button disabled={busy} className="btn-primary mt-4 min-h-16 w-full">{busy ? 'BUSCANDO...' : 'BUSCAR EN LISTA'}<Icon name="search" size={18}/></button></form>}
 
           {busy && mode === 'scan' && !attendee && <div className="mt-4 border border-strobe/40 bg-strobe/5 p-4 text-center font-mono text-[10px] font-bold uppercase tracking-wider text-strobe">Identificando entrada...</div>}
           {inlineError && !attendee && <div className="mt-4 border border-door-red/50 bg-door-red/10 p-4"><p className="font-mono text-xs font-bold uppercase text-door-red">No encontrado</p><p className="mt-2 text-sm leading-5 text-paper-text">{inlineError}</p>{mode === 'scan' && <button type="button" onClick={() => setInlineError('')} className="mt-4 min-h-12 w-full border border-door-red font-mono text-xs font-bold uppercase text-door-red">Volver a escanear</button>}</div>}

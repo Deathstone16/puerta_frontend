@@ -4,7 +4,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
 import { useTheme } from '../../context/ThemeContext'
-import { formatMoney } from '../../data/mockData'
+import { formatMoney } from '../../lib/format'
 
 /**
  * MetricasTab — KPIs + bar chart (recaudación por noche) + line chart (ventas 7 días).
@@ -75,6 +75,9 @@ export default function MetricasTab({ eventos = [], recaudacion }) {
   const tooltipBorder = isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid #e5e7eb'
   const tooltipColor = isDark ? '#EDEBF5' : '#111827'
 
+  // Determinar si hay historial para mostrar gráficos
+  const tieneHistorial = eventos.length > 0 || (recaudacion && recaudacion.total_recaudado > 0)
+
   return (
     <div data-testid="metricas-tab">
       {/* --- Filters placeholder --- */}
@@ -92,68 +95,82 @@ export default function MetricasTab({ eventos = [], recaudacion }) {
         <KpiCard label="Promedio/Evento" value={formatMoney(kpis.promedio)} />
       </div>
 
-      {/* --- Bar Chart: Recaudación por evento --- */}
-      <section className="panel mt-8 p-5">
-        <p className="mb-5 font-mono text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-muted">
-          Recaudación por evento (miles $)
-        </p>
-        <div className="h-64" data-testid="bar-chart">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={barData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
-              <XAxis
-                dataKey="nombre"
-                tick={{ fill: tickFill, fontSize: 10, fontFamily: 'Space Mono' }}
-                axisLine={{ stroke: axisStroke }}
-              />
-              <YAxis
-                tick={{ fill: tickFill, fontSize: 10, fontFamily: 'Space Mono' }}
-                axisLine={{ stroke: axisStroke }}
-                tickFormatter={(v) => `${Math.round(v / 1000)}K`}
-              />
-              <Tooltip
-                contentStyle={{ background: tooltipBg, border: tooltipBorder, color: tooltipColor }}
-                formatter={(value) => [formatMoney(value), 'Recaudación']}
-              />
-              <Bar dataKey="recaudacion" fill="#8B5CF6" radius={[2, 2, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </section>
+      {!tieneHistorial ? (
+        /* --- Empty state: sin historial --- */
+        <section className="panel mt-8 p-10 text-center" data-testid="metricas-empty">
+          <p className="font-display text-lg text-gray-400 dark:text-muted">
+            Aún no hay historial de eventos
+          </p>
+          <p className="mt-2 text-sm text-gray-400 dark:text-muted/70">
+            Los gráficos se mostrarán cuando tengas eventos con actividad registrada.
+          </p>
+        </section>
+      ) : (
+        <>
+          {/* --- Bar Chart: Recaudación por evento --- */}
+          <section className="panel mt-8 p-5">
+            <p className="mb-5 font-mono text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-muted">
+              Recaudación por evento (miles $)
+            </p>
+            <div className="h-64" data-testid="bar-chart">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={barData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
+                  <XAxis
+                    dataKey="nombre"
+                    tick={{ fill: tickFill, fontSize: 10, fontFamily: 'Space Mono' }}
+                    axisLine={{ stroke: axisStroke }}
+                  />
+                  <YAxis
+                    tick={{ fill: tickFill, fontSize: 10, fontFamily: 'Space Mono' }}
+                    axisLine={{ stroke: axisStroke }}
+                    tickFormatter={(v) => `${Math.round(v / 1000)}K`}
+                  />
+                  <Tooltip
+                    contentStyle={{ background: tooltipBg, border: tooltipBorder, color: tooltipColor }}
+                    formatter={(value) => [formatMoney(value), 'Recaudación']}
+                  />
+                  <Bar dataKey="recaudacion" fill="#8B5CF6" radius={[2, 2, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </section>
 
-      {/* --- Line Chart: Ventas diarias últimos 7 días --- */}
-      <section className="panel mt-5 p-5">
-        <p className="mb-5 font-mono text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-muted">
-          Ventas diarias (últimos 7 días)
-        </p>
-        <div className="h-52" data-testid="line-chart">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={lineData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
-              <XAxis
-                dataKey="dia"
-                tick={{ fill: tickFill, fontSize: 10, fontFamily: 'Space Mono' }}
-                axisLine={{ stroke: axisStroke }}
-              />
-              <YAxis
-                tick={{ fill: tickFill, fontSize: 10, fontFamily: 'Space Mono' }}
-                axisLine={{ stroke: axisStroke }}
-              />
-              <Tooltip
-                contentStyle={{ background: tooltipBg, border: tooltipBorder, color: tooltipColor }}
-              />
-              <Line
-                type="monotone"
-                dataKey="ventas"
-                stroke="#8B5CF6"
-                strokeWidth={2}
-                dot={{ fill: '#22D3EE', r: 4 }}
-                activeDot={{ fill: '#22D3EE', r: 6 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </section>
+          {/* --- Line Chart: Ventas diarias últimos 7 días --- */}
+          <section className="panel mt-5 p-5">
+            <p className="mb-5 font-mono text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-muted">
+              Ventas diarias (últimos 7 días)
+            </p>
+            <div className="h-52" data-testid="line-chart">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={lineData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
+                  <XAxis
+                    dataKey="dia"
+                    tick={{ fill: tickFill, fontSize: 10, fontFamily: 'Space Mono' }}
+                    axisLine={{ stroke: axisStroke }}
+                  />
+                  <YAxis
+                    tick={{ fill: tickFill, fontSize: 10, fontFamily: 'Space Mono' }}
+                    axisLine={{ stroke: axisStroke }}
+                  />
+                  <Tooltip
+                    contentStyle={{ background: tooltipBg, border: tooltipBorder, color: tooltipColor }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="ventas"
+                    stroke="#8B5CF6"
+                    strokeWidth={2}
+                    dot={{ fill: '#22D3EE', r: 4 }}
+                    activeDot={{ fill: '#22D3EE', r: 6 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </section>
+        </>
+      )}
     </div>
   )
 }

@@ -3,7 +3,6 @@ import { QRCodeCanvas } from 'qrcode.react'
 import { Link, useParams } from 'react-router-dom'
 import Icon from '../components/Icons'
 import { usePurchase } from '../context/PurchaseContext'
-import { getEvent } from '../data/mockData'
 import { api } from '../lib/api'
 
 export default function WalletPage() {
@@ -17,7 +16,7 @@ export default function WalletPage() {
     apellido: selection?.buyer?.apellido || 'Norware',
     dni: selection?.buyer?.dni || '—',
     estado: 'pagado',
-    evento: selection?.event || getEvent('neon-protocol'),
+    evento: selection?.event || {},
     qr_code: token,
   }
   const [ticket, setLocalTicket] = useState(storedTicket || fallback)
@@ -29,7 +28,7 @@ export default function WalletPage() {
     return () => { active = false }
   }, [token])
 
-  const event = { ...getEvent(ticket.evento?.slug || ticket.evento?.id), ...(ticket.evento || {}) }
+  const event = ticket.evento || {}
   const download = () => {
     const canvas = canvasWrap.current?.querySelector('canvas')
     if (!canvas) return

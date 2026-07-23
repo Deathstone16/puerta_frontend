@@ -1,5 +1,5 @@
 import Icon from '../../components/Icons'
-import { formatMoney } from '../../data/mockData'
+import { formatMoney } from '../../lib/format'
 
 /**
  * NochesTab — Event list with estado-colored left borders and action buttons.

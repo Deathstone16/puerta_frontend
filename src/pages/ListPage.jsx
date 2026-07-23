@@ -1,20 +1,20 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import Icon from '../components/Icons'
-import { getEvent, formatMoney } from '../data/mockData'
+import { formatMoney } from '../lib/format'
 import { api } from '../lib/api'
 
 export default function ListPage() {
   const { slug } = useParams()
-  const [data, setData] = useState({ evento: getEvent('neon-protocol'), rrpp_nombre: 'Lista general', anotados: 146, link_activo: true })
+  const [data, setData] = useState({ evento: null, rrpp_nombre: '', anotados: 0, link_activo: true })
   const [mode, setMode] = useState(null) // null = choose, 'lista' = form, 'comprar' = redirect
   const [form, setForm] = useState({ nombre: '', apellido: '', dni: '', instagram: '' })
   const [status, setStatus] = useState('idle')
 
   useEffect(() => { api.get(`/lista/${slug}/`).then(setData).catch(() => {}) }, [slug])
 
-  const event = { ...getEvent(data.evento?.slug || data.evento?.id), ...(data.evento || {}) }
-  const hasLista = data.link_activo !== false && data.evento?.habilitar_lista !== false
+  const event = data.evento || {}
+  const hasLista = data.link_activo !== false && event.habilitar_lista !== false
 
   const update = (key) => (e) => setForm((current) => ({ ...current, [key]: e.target.value }))
 

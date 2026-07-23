@@ -3,8 +3,7 @@ import Icon from '../components/Icons'
 import OrganizadorFormModal from '../components/OrganizadorFormModal'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
-import { formatMoney } from '../data/mockData'
-import { adminMockData } from '../data/adminMockData'
+import { formatMoney } from '../lib/format'
 import { api, apiRequest } from '../lib/api'
 
 function useAdminMetrics() {
@@ -15,7 +14,7 @@ function useAdminMetrics() {
     let active = true
     api.get('/admin/metricas/')
       .then((response) => { if (active) setData(response) })
-      .catch(() => { if (active) setData(adminMockData) })
+      .catch(() => { if (active) setData(null) })
       .finally(() => { if (active) setLoading(false) })
     return () => { active = false }
   }, [])

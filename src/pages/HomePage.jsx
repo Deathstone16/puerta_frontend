@@ -1,13 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import EventCard from '../components/EventCard'
-import { events as mockEvents, normalizeEvent } from '../data/mockData'
 import { api } from '../lib/api'
 
 const genres = ['Todas', 'Techno', 'House', 'EBM', 'Trance', 'Dark']
 
 export default function HomePage() {
-  const [events, setEvents] = useState(mockEvents)
+  const [events, setEvents] = useState([])
   const [genre, setGenre] = useState('Todas')
   const [loading, setLoading] = useState(true)
   const [searchParams] = useSearchParams()
@@ -16,7 +15,7 @@ export default function HomePage() {
   useEffect(() => {
     let active = true
     api.get('/eventos/')
-      .then((data) => active && Array.isArray(data) && data.length && setEvents(data.map(normalizeEvent)))
+      .then((data) => active && Array.isArray(data) && setEvents(data))
       .catch(() => {})
       .finally(() => active && setLoading(false))
     return () => { active = false }

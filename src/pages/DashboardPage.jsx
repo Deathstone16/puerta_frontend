@@ -5,11 +5,6 @@ import PriceBreakdownModal from '../components/PriceBreakdownModal'
 import RrppFormModal from '../components/RrppFormModal'
 import AsignarRrppModal from '../components/AsignarRrppModal'
 import { useAuth } from '../context/AuthContext'
-import {
-  mockAforo,
-  mockEventos,
-  mockRecaudacion,
-} from '../data/dashboardMockData'
 import { api } from '../lib/api'
 import MetricasTab from './dashboard/MetricasTab'
 import NochesTab from './dashboard/NochesTab'
@@ -40,8 +35,8 @@ export default function DashboardPage() {
       try {
         const e = await api.get('/eventos/')
         if (active) setEventos(Array.isArray(e) ? e : [])
-      } catch (error) {
-        if (active && error.status === 0) setEventos(mockEventos)
+      } catch {
+        if (active) setEventos([])
       }
     }
     load()
@@ -66,10 +61,8 @@ export default function DashboardPage() {
       setAforoStatus('live')
     } catch (error) {
       if (controller.signal.aborted || aforoRef.current.sequence !== sequence) return
-      if (error.status === 0) {
-        setAforo((prev) => prev || mockAforo)
-        setAforoStatus('demo')
-      }
+      setAforo(null)
+      setAforoStatus('unavailable')
     }
   }, [activeEventId])
 
@@ -89,7 +82,7 @@ export default function DashboardPage() {
     let active = true
     api.get(`/dashboard/recaudacion/${activeEventId}/`)
       .then((data) => { if (active) setRecaudacion(data) })
-      .catch((error) => { if (active && error.status === 0) setRecaudacion(mockRecaudacion) })
+      .catch(() => { if (active) setRecaudacion(null) })
     return () => { active = false }
   }, [activeTab, activeEventId])
 
