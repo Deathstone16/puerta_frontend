@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import Icon from '../../components/Icons'
-import { formatMoney } from '../../lib/format'
 import { api } from '../../lib/api'
 
 /**
  * GestionRrppTab — Panel for the owner to manage their RRPP: list, create, edit, delete.
+ * Commission is defined per-event at assignment time, not shown here.
  *
  * Props:
  *   onCreateRrpp: () => void — opens RrppFormModal from parent
@@ -36,8 +36,6 @@ export default function GestionRrppTab({ onCreateRrpp, onAsignarRrpp }) {
     setEditForm({
       nombre: rrpp.nombre?.split(' ')[0] || '',
       apellido: rrpp.nombre?.split(' ').slice(1).join(' ') || '',
-      tipo_comision: rrpp.tipo_comision || 'fijo',
-      valor_comision: rrpp.valor_comision || '',
     })
   }
 
@@ -111,12 +109,11 @@ export default function GestionRrppTab({ onCreateRrpp, onAsignarRrpp }) {
       ) : (
         <div className="panel overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[650px] text-left" data-testid="rrpp-table">
+            <table className="w-full min-w-[500px] text-left" data-testid="rrpp-table">
               <thead>
                 <tr className="border-b border-gray-200 dark:border-white/10">
                   <th className="p-3 font-mono text-[9px] font-bold uppercase tracking-wider text-gray-500 dark:text-muted">Nombre</th>
                   <th className="p-3 font-mono text-[9px] font-bold uppercase tracking-wider text-gray-500 dark:text-muted">Usuario</th>
-                  <th className="p-3 font-mono text-[9px] font-bold uppercase tracking-wider text-gray-500 dark:text-muted">Comisión</th>
                   <th className="p-3 font-mono text-[9px] font-bold uppercase tracking-wider text-gray-500 dark:text-muted">Eventos</th>
                   <th className="p-3 font-mono text-[9px] font-bold uppercase tracking-wider text-gray-500 dark:text-muted text-right">Acciones</th>
                 </tr>
@@ -125,43 +122,14 @@ export default function GestionRrppTab({ onCreateRrpp, onAsignarRrpp }) {
                 {rrppList.map((rrpp) => (
                   <tr key={rrpp.id} className="border-b border-gray-100 dark:border-white/5" data-testid="rrpp-row">
                     {editingId === rrpp.id ? (
-                      /* Editing row */
                       <>
                         <td className="p-3">
                           <div className="flex gap-1">
-                            <input
-                              className="field min-h-8 w-20 text-xs"
-                              value={editForm.nombre}
-                              onChange={(e) => setEditForm((f) => ({ ...f, nombre: e.target.value }))}
-                              placeholder="Nombre"
-                            />
-                            <input
-                              className="field min-h-8 w-20 text-xs"
-                              value={editForm.apellido}
-                              onChange={(e) => setEditForm((f) => ({ ...f, apellido: e.target.value }))}
-                              placeholder="Apellido"
-                            />
+                            <input className="field min-h-8 w-24 text-xs" value={editForm.nombre} onChange={(e) => setEditForm((f) => ({ ...f, nombre: e.target.value }))} placeholder="Nombre" />
+                            <input className="field min-h-8 w-24 text-xs" value={editForm.apellido} onChange={(e) => setEditForm((f) => ({ ...f, apellido: e.target.value }))} placeholder="Apellido" />
                           </div>
                         </td>
                         <td className="p-3 font-mono text-xs text-gray-500 dark:text-muted">@{rrpp.username}</td>
-                        <td className="p-3">
-                          <div className="flex gap-1">
-                            <select
-                              className="field min-h-8 w-24 text-[10px]"
-                              value={editForm.tipo_comision}
-                              onChange={(e) => setEditForm((f) => ({ ...f, tipo_comision: e.target.value }))}
-                            >
-                              <option value="fijo">Fijo</option>
-                              <option value="porcentaje">%</option>
-                            </select>
-                            <input
-                              className="field min-h-8 w-16 text-xs"
-                              type="number"
-                              value={editForm.valor_comision}
-                              onChange={(e) => setEditForm((f) => ({ ...f, valor_comision: e.target.value }))}
-                            />
-                          </div>
-                        </td>
                         <td className="p-3" />
                         <td className="p-3 text-right">
                           <div className="flex justify-end gap-1">
@@ -171,14 +139,9 @@ export default function GestionRrppTab({ onCreateRrpp, onAsignarRrpp }) {
                         </td>
                       </>
                     ) : (
-                      /* Display row */
                       <>
                         <td className="p-3 text-sm font-semibold">{rrpp.nombre}</td>
                         <td className="p-3 font-mono text-xs text-gray-500 dark:text-muted">@{rrpp.username}</td>
-                        <td className="p-3 font-mono text-xs">
-                          <span className="text-strobe">{rrpp.tipo_comision === 'fijo' ? formatMoney(rrpp.valor_comision) : `${rrpp.valor_comision}%`}</span>
-                          <span className="ml-1 text-gray-400 dark:text-muted">{rrpp.tipo_comision === 'fijo' ? '/ingresado' : 'recaudado'}</span>
-                        </td>
                         <td className="p-3 font-mono text-xs">{rrpp.asignaciones?.length || 0} eventos</td>
                         <td className="p-3 text-right">
                           <div className="flex justify-end gap-1">

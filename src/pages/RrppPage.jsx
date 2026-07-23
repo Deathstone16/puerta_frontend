@@ -154,6 +154,8 @@ export default function RrppPage() {
       setPanelError('')
     } catch (error) {
       if (controller.signal.aborted || requestRef.current.sequence !== sequence) return
+      // If 401, let AuthContext handle the refresh silently — don't show error
+      if (error?.status === 401) return
       setPanelStatus('error')
       setPanelError(errorDetail(error, 'No pudimos actualizar los eventos asignados. Se conservan los últimos datos disponibles.'))
     }
@@ -162,7 +164,7 @@ export default function RrppPage() {
   useEffect(() => {
     setPanelStatus('loading')
     loadPanel()
-    const interval = window.setInterval(loadPanel, 4000)
+    const interval = window.setInterval(loadPanel, 15000)
     return () => {
       window.clearInterval(interval)
       requestRef.current.sequence += 1
