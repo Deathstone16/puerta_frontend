@@ -20,10 +20,37 @@ const roleRoutes = {
   superadmin: '/admin',
 }
 
+const SESSION_KEY = 'puerta_session'
+
+function loadStoredSession() {
+  try {
+    const stored = sessionStorage.getItem(SESSION_KEY)
+    if (!stored) return null
+    const parsed = JSON.parse(stored)
+    // Check if session is still valid (not expired)
+    if (parsed.expiresAt && parsed.expiresAt < Date.now()) return null
+    return parsed
+  } catch {
+    return null
+  }
+}
+
+function saveSession(session) {
+  try {
+    if (session) {
+      sessionStorage.setItem(SESSION_KEY, JSON.stringify(session))
+    } else {
+      sessionStorage.removeItem(SESSION_KEY)
+    }
+  } catch {
+    // Storage not available
+  }
+}
+
 export function AuthProvider({ children }) {
-  const [session, setSession] = useState(null)
+  const [session, setSession] = useState(loadStoredSession)
   const sessionRef = useRef(session)
-  useEffect(() => { sessionRef.current = session }, [session])
+  useEffect(() => { sessionRef.current = session; saveSession(session) }, [session])
 
   const logout = useCallback(() => setSession(null), [])
 

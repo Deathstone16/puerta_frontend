@@ -99,6 +99,10 @@ export default function DashboardPage() {
   const openModal = (type, data = null) => setModalState({ type, data })
   const closeModal = () => setModalState({ type: null, data: null })
 
+  // Track mutations to trigger child refreshes
+  const [refreshKey, setRefreshKey] = useState(0)
+  const triggerRefresh = useCallback(() => setRefreshKey((k) => k + 1), [])
+
   // Cancel event
   const handleCancel = useCallback(async (eventoId) => {
     const confirmado = window.confirm('¿Cancelar este evento? Esta acción no se puede deshacer.')
@@ -180,6 +184,7 @@ export default function DashboardPage() {
       )}
       {activeTab === 'rrpp' && (
         <GestionRrppTab
+          key={refreshKey}
           onCreateRrpp={() => openModal('rrpp-create')}
           onAsignarRrpp={() => openModal('rrpp-assign')}
         />
@@ -207,11 +212,11 @@ export default function DashboardPage() {
       <RrppFormModal
         open={modalState.type === 'rrpp-create'}
         onClose={closeModal}
-        onSuccess={closeModal}
+        onSuccess={() => { closeModal(); triggerRefresh() }}
       />
       <AsignarRrppModal
         open={modalState.type === 'rrpp-assign'}
-        onClose={closeModal}
+        onClose={() => { closeModal(); triggerRefresh() }}
         eventos={eventos}
       />
       <PriceBreakdownModal
