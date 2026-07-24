@@ -35,21 +35,25 @@ export default function AuditoriaRrppTab({ eventos = [] }) {
     }
   }, [eventos, selectedEventId])
 
-  const loadRanking = useCallback(async (eventoId) => {
+  const loadRanking = useCallback(async (eventoId, isPoll = false) => {
     if (!eventoId) { setRanking([]); setLoading(false); return }
-    setLoading(true)
+    if (!isPoll) setLoading(true)
     try {
       const data = await api.get(`/dashboard/ranking-rrpp/${eventoId}/`)
       setRanking(Array.isArray(data) ? data : [])
     } catch {
-      setRanking([])
+      if (!isPoll) setRanking([])
     } finally {
       setLoading(false)
     }
   }, [])
 
   useEffect(() => {
-    if (selectedEventId) loadRanking(selectedEventId)
+    if (!selectedEventId) return undefined
+    loadRanking(selectedEventId)
+    // REQ-6.2: polling del ranking de RRPP cada 30s.
+    const interval = window.setInterval(() => loadRanking(selectedEventId, true), 30000)
+    return () => window.clearInterval(interval)
   }, [selectedEventId, loadRanking])
 
   // Reset paid status when event changes

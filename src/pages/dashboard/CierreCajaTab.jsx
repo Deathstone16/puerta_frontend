@@ -69,15 +69,20 @@ export default function CierreCajaTab({ eventos = [] }) {
       return
     }
     let active = true
-    setLoading(true)
-    Promise.all(
-      eventosToFetch.map((ev) => fetchRecaudacion(ev.id).then((data) => ({ evento: ev, data })))
-    ).then((results) => {
-      if (!active) return
-      setRecaudacionPorEvento(results.filter((r) => r.data))
-      setLoading(false)
-    })
-    return () => { active = false }
+    const run = (isPoll = false) => {
+      if (!isPoll) setLoading(true)
+      Promise.all(
+        eventosToFetch.map((ev) => fetchRecaudacion(ev.id).then((data) => ({ evento: ev, data })))
+      ).then((results) => {
+        if (!active) return
+        setRecaudacionPorEvento(results.filter((r) => r.data))
+        setLoading(false)
+      })
+    }
+    run()
+    // REQ-6.1/6.2: refrescar cada 30s para reflejar operaciones de la cajera.
+    const interval = window.setInterval(() => run(true), 30000)
+    return () => { active = false; window.clearInterval(interval) }
   }, [eventosToFetch, fetchRecaudacion])
 
   // Aggregated totals
