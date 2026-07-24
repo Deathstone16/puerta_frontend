@@ -4,7 +4,7 @@ import Icon from './Icons'
 
 export default function EventCard({ event, featured = false }) {
   return (
-    <Link to={`/evento/${event.slug}`} className={`group relative isolate block overflow-hidden border border-gray-200 bg-gray-50 dark:border-white/10 dark:bg-floor ${featured ? 'h-[350px] md:h-[430px]' : 'h-[390px]'}`}>
+    <Link to={`/evento/${event.id ?? event.slug}`} className={`group relative isolate block overflow-hidden border border-gray-200 bg-gray-50 dark:border-white/10 dark:bg-floor ${featured ? 'h-[350px] md:h-[430px]' : 'h-[390px]'}`}>
       <img src={event.imagen} alt="" className="absolute inset-0 -z-20 size-full object-cover grayscale-[35%] transition duration-700 group-hover:scale-105 group-hover:grayscale-0" />
       <div className="absolute inset-0 -z-10 bg-gradient-to-t from-white via-white/35 to-transparent dark:from-void dark:via-void/35" />
       <div className="absolute left-0 top-0 border-b border-r border-gray-300 bg-white/80 px-3 py-2 font-mono text-[11px] font-bold text-strobe backdrop-blur dark:border-white/20 dark:bg-void/80">{event.fechaCorta}</div>

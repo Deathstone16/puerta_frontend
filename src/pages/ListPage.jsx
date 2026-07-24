@@ -97,7 +97,7 @@ export default function ListPage() {
             <div className="mt-8 grid gap-3 sm:grid-cols-2">
               <input required className="field" placeholder="NOMBRE" value={form.nombre} onChange={update('nombre')} />
               <input required className="field" placeholder="APELLIDO" value={form.apellido} onChange={update('apellido')} />
-              <input required inputMode="numeric" pattern="[0-9]{7,9}" className="field sm:col-span-2" placeholder="DNI SIN PUNTOS" value={form.dni} onChange={update('dni')} />
+              <input required inputMode="numeric" pattern="[0-9]{7,8}" minLength={7} maxLength={8} title="DNI sin puntos: 7 u 8 dígitos" className="field sm:col-span-2" placeholder="DNI SIN PUNTOS" value={form.dni} onChange={update('dni')} />
               <input className="field sm:col-span-2" placeholder="@tu.usuario de Instagram (opcional)" value={form.instagram} onChange={update('instagram')} />
             </div>
 
