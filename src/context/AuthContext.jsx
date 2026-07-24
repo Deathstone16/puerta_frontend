@@ -69,14 +69,18 @@ export function AuthProvider({ children }) {
     }
   }, [logout])
 
-  // Configure auth provider synchronously so child effects already have
-  // getAccessToken available on first mount (avoids race condition).
+  // Se configura de forma síncrona (durante el render) y no dentro de un useEffect:
+  // los effects de los componentes hijos corren ANTES que los del padre, así que si
+  // esto viviera en un effect, el primer fetch de un hijo saldría sin Authorization
+  // y el backend respondería 401 ("Sesión expirada") en un reload directo.
+  const refreshRef = useRef(refreshAccessToken)
+  refreshRef.current = refreshAccessToken
   useMemo(() => {
     configureAuthProvider({
       getAccessToken: () => sessionRef.current?.accessToken || null,
-      refreshAccessToken,
+      refreshAccessToken: (...args) => refreshRef.current?.(...args),
     })
-  }, [refreshAccessToken])
+  }, [])
 
   useEffect(() => {
     if (!session?.expiresAt || session.isDemo) return undefined
