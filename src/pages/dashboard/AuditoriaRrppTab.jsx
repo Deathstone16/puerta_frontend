@@ -8,8 +8,6 @@ import { api } from '../../lib/api'
  *
  * Props:
  *   eventos: Evento[] — list of owner's events
- *   onCreateRrpp: () => void
- *   onAsignarRrpp: () => void
  */
 
 function getConversionColor(tasa) {
@@ -24,7 +22,7 @@ function fmtDate(dateStr) {
   return new Intl.DateTimeFormat('es-AR', { day: '2-digit', month: 'short' }).format(d)
 }
 
-export default function AuditoriaRrppTab({ eventos = [], onCreateRrpp, onAsignarRrpp }) {
+export default function AuditoriaRrppTab({ eventos = [] }) {
   const [selectedEventId, setSelectedEventId] = useState(eventos[0]?.id || '')
   const [ranking, setRanking] = useState([])
   const [loading, setLoading] = useState(true)
@@ -83,23 +81,9 @@ export default function AuditoriaRrppTab({ eventos = [], onCreateRrpp, onAsignar
   return (
     <div data-testid="auditoria-tab">
       {/* Header */}
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="eyebrow">Rendimiento de RRPP</p>
-          <h2 className="display-title mt-2 text-3xl">AUDITORÍA RRPP</h2>
-        </div>
-        <div className="flex gap-2">
-          {onCreateRrpp && (
-            <button onClick={onCreateRrpp} className="btn-secondary" data-testid="btn-alta-rrpp">
-              <Icon name="plus" size={15} /> Alta RRPP
-            </button>
-          )}
-          {onAsignarRrpp && (
-            <button onClick={onAsignarRrpp} className="btn-secondary" data-testid="btn-asignar-rrpp">
-              <Icon name="users" size={15} /> Asignar RRPP
-            </button>
-          )}
-        </div>
+      <div className="mb-6">
+        <p className="eyebrow">Rendimiento de RRPP</p>
+        <h2 className="display-title mt-2 text-3xl">AUDITORÍA RRPP</h2>
       </div>
 
       {/* Event selector */}

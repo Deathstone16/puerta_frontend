@@ -54,6 +54,8 @@ export default function CashierPage() {
   const [scannerKey, setScannerKey] = useState(0)
   const [lastTransaction, setLastTransaction] = useState(null)
   const [undoRemaining, setUndoRemaining] = useState(0)
+  const [cierre, setCierre] = useState(null)
+  const [cierreLoading, setCierreLoading] = useState(false)
 
   const occupancy = useMemo(() => {
     if (!capacity) return null
@@ -171,26 +173,6 @@ export default function CashierPage() {
     setFeedback({ type: 'success', message: result.mensaje || 'Operación registrada', detail, transaction })
   }
 
-  const runAction = async (type, paymentMethod = null) => {
-    if (busy) return
-    if (!selected?.id) {
-      setInlineError(type === 'web' ? 'Escaneá una entrada web antes de validar.' : 'Buscá una persona por DNI antes de cobrar.')
-      return
-    }
-    setBusy(true)
-    setInlineError('')
-    try {
-      let result
-      if (type === 'web') result = await api.post(`/puerta/cajera/escanear-web/${selected.id}/`, {})
-      else result = await api.post(`/puerta/cajera/cobrar-lista/${selected.id}/`, { metodo_pago: paymentMethod, monto_pagado: Number(selected.monto_pago || ticketPrice) })
-      registerSuccess(result, type, `${selected.nombre} ${selected.apellido}`, { addedEntries: 1 })
-    } catch (error) {
-      setFeedback({ type: 'error', message: error.message || 'No pudimos registrar la operación.', detail: error.data?.detail || 'Revisá el estado del ingreso e intentá otra vez.' })
-    } finally {
-      setBusy(false)
-    }
-  }
-
   const submitGeneralSale = async (people) => {
     setBusy(true)
     try {
@@ -223,6 +205,20 @@ export default function CashierPage() {
     } finally { setBusy(false) }
   }
 
+  const loadCierre = useCallback(async () => {
+    setCierreLoading(true)
+    try {
+      const data = await api.get('/puerta/cajera/cierre/')
+      setCierre(data)
+    } catch {
+      setCierre(null)
+    } finally {
+      setCierreLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { loadCierre() }, [loadCierre])
+
   const isWeb = selected?.tipo_ingreso === 'entrada_web'
   const isList = selected?.tipo_ingreso === 'lista_rrpp'
   const canUndoFeedback = Boolean(
@@ -250,9 +246,45 @@ export default function CashierPage() {
 
   <section className="mt-4 min-h-40 border-2 border-white/15 bg-floor p-5" aria-live="polite">{selected ? <><div className="flex items-center justify-between"><p className="eyebrow">Resultado inmediato</p><span className={`border px-2 py-1 font-mono text-[9px] font-bold uppercase ${isWeb ? 'border-strobe text-strobe' : 'border-amber-300 text-amber-300'}`}>{isWeb ? 'Entrada web' : 'Lista RRPP'}</span></div><h2 className="display-title mt-4 text-4xl">{selected.nombre} {selected.apellido}</h2><div className="mt-5 grid grid-cols-2 gap-4 font-mono"><div><p className="text-[9px] uppercase text-muted">DNI</p><p className="mt-1 text-sm font-bold">{selected.dni}</p></div><div><p className="text-[9px] uppercase text-muted">Estado</p><p className="mt-1 text-sm font-bold">{String(selected.estado).replaceAll('_', ' ')}</p></div>{isList && <><div><p className="text-[9px] uppercase text-muted">RRPP</p><p className="mt-1 text-sm font-bold">{selected.rrpp_nombre}</p></div><div><p className="text-[9px] uppercase text-muted">A cobrar</p><p className="mt-1 text-sm font-bold text-strobe">{formatMoney(selected.monto_pago)}</p></div></>}</div></> : <div className="grid min-h-32 place-items-center text-center"><div><Icon name="ticket" size={30} className="mx-auto text-muted"/><p className="mt-3 font-mono text-[10px] uppercase leading-5 text-muted">Escaneá un QR o buscá un DNI.<br/>El resultado aparece acá.</p></div></div>}</section>
 
-  <section className="mt-4" aria-labelledby="actions-title"><p id="actions-title" className="eyebrow mb-3">Acciones rápidas</p><div className="grid grid-cols-2 gap-3"><button type="button" disabled={!isWeb || busy} onClick={() => runAction('web')} className="flex min-h-24 flex-col items-center justify-center gap-2 bg-strobe px-3 text-void disabled:bg-white/5 disabled:text-muted"><Icon name="ticket" size={25}/><span className="font-display text-lg">ENTRADA WEB</span></button><button type="button" disabled={!isList || busy} onClick={() => runAction('lista', 'efectivo')} className="flex min-h-24 flex-col items-center justify-center gap-2 bg-emerald-400 px-3 text-void disabled:bg-white/5 disabled:text-muted"><Icon name="cash" size={25}/><span className="font-display text-lg">EFECTIVO</span></button><button type="button" disabled={!isList || busy} onClick={() => runAction('lista', 'transferencia')} className="flex min-h-24 flex-col items-center justify-center gap-2 bg-uv px-3 text-white disabled:bg-white/5 disabled:text-muted"><Icon name="share" size={25}/><span className="font-display text-lg">TRANSFERENCIA</span></button><button type="button" disabled={busy} onClick={() => setSaleOpen(true)} className="flex min-h-24 flex-col items-center justify-center gap-2 bg-amber-300 px-3 text-void disabled:opacity-50"><Icon name="plus" size={25}/><span className="font-display text-lg">VENTA GENERAL</span></button></div></section>
+  <section className="mt-4" aria-labelledby="actions-title"><p id="actions-title" className="eyebrow mb-3">Acciones rápidas</p><button type="button" disabled={busy} onClick={() => setSaleOpen(true)} className="flex min-h-24 w-full items-center justify-center gap-3 bg-amber-300 px-3 text-void disabled:opacity-50"><Icon name="plus" size={25}/><span className="font-display text-lg">VENTA GENERAL</span></button></section>
 
-  {lastTransaction && undoRemaining > 0 && <section className="mt-4 border border-amber-300/60 bg-amber-300/5 p-4"><div className="flex items-center gap-3"><Icon name="clock" className="shrink-0 text-amber-300"/><div className="min-w-0 flex-1"><p className="font-mono text-[9px] font-bold uppercase text-amber-300">Última operación · {formatCountdown(undoRemaining)}</p><p className="mt-1 truncate text-xs text-muted">{lastTransaction.detail}</p></div><button type="button" disabled={busy} onClick={() => undoTransaction()} className="min-h-11 border border-amber-300 px-3 font-mono text-[9px] font-bold uppercase text-amber-300 disabled:opacity-40">Deshacer</button></div></section>}</div></div>
+  {lastTransaction && undoRemaining > 0 && <section className="mt-4 border border-amber-300/60 bg-amber-300/5 p-4"><div className="flex items-center gap-3"><Icon name="clock" className="shrink-0 text-amber-300"/><div className="min-w-0 flex-1"><p className="font-mono text-[9px] font-bold uppercase text-amber-300">Última operación · {formatCountdown(undoRemaining)}</p><p className="mt-1 truncate text-xs text-muted">{lastTransaction.detail}</p></div><button type="button" disabled={busy} onClick={() => undoTransaction()} className="min-h-11 border border-amber-300 px-3 font-mono text-[9px] font-bold uppercase text-amber-300 disabled:opacity-40">Deshacer</button></div></section>}
+
+  {/* Cierre de Caja */}
+  <section className="mt-6 border-t border-gray-200 pt-5 dark:border-white/10">
+    <div className="mb-4 flex items-center justify-between">
+      <div>
+        <p className="eyebrow">Resumen</p>
+        <h2 className="display-title mt-1 text-2xl text-gray-900 dark:text-paper-text">CIERRE DE CAJA</h2>
+      </div>
+      <button type="button" onClick={loadCierre} disabled={cierreLoading} className="grid size-9 place-items-center border border-gray-200 text-gray-500 hover:border-strobe hover:text-strobe dark:border-white/15 dark:text-muted" aria-label="Actualizar cierre"><Icon name="refresh" size={16} /></button>
+    </div>
+    {cierreLoading ? (
+      <div className="grid min-h-24 place-items-center"><div className="size-6 animate-spin border-2 border-gray-200 border-t-strobe dark:border-white/10" /></div>
+    ) : !cierre ? (
+      <p className="text-sm text-gray-500 dark:text-muted">No se pudo cargar el cierre de caja.</p>
+    ) : (
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div className="border border-gray-200 bg-gray-50 p-4 dark:border-white/10 dark:bg-void">
+          <p className="font-mono text-[9px] font-bold uppercase tracking-[.14em] text-gray-500 dark:text-muted">Efectivo</p>
+          <p className="mt-2 font-display text-2xl text-emerald-500 dark:text-emerald-300">{formatMoney(cierre.efectivo?.monto || 0)}</p>
+          <p className="mt-1 font-mono text-[9px] text-gray-400 dark:text-muted">{cierre.efectivo?.cantidad || 0} entradas</p>
+        </div>
+        <div className="border border-gray-200 bg-gray-50 p-4 dark:border-white/10 dark:bg-void">
+          <p className="font-mono text-[9px] font-bold uppercase tracking-[.14em] text-gray-500 dark:text-muted">Transferencia</p>
+          <p className="mt-2 font-display text-2xl text-uv">{formatMoney(cierre.transferencia?.monto || 0)}</p>
+          <p className="mt-1 font-mono text-[9px] text-gray-400 dark:text-muted">{cierre.transferencia?.cantidad || 0} entradas</p>
+        </div>
+        <div className="border border-gray-200 bg-gray-50 p-4 dark:border-white/10 dark:bg-void">
+          <p className="font-mono text-[9px] font-bold uppercase tracking-[.14em] text-gray-500 dark:text-muted">Total recaudado</p>
+          <p className="mt-2 font-display text-2xl text-strobe">{formatMoney(cierre.total_recaudado || 0)}</p>
+          <p className="mt-1 font-mono text-[9px] text-gray-400 dark:text-muted">{(cierre.efectivo?.cantidad || 0) + (cierre.transferencia?.cantidad || 0) + (cierre.web?.cantidad || 0)} entradas totales</p>
+        </div>
+      </div>
+    )}
+  </section>
+
+  </div></div>
 
   <CashierSaleSheet open={saleOpen} busy={busy} ticketPrice={ticketPrice} onClose={() => setSaleOpen(false)} onSubmit={submitGeneralSale}/><CashierFeedback feedback={feedback} canUndo={canUndoFeedback} onClose={resetTerminal} onUndo={undoTransaction}/></main>
 }
