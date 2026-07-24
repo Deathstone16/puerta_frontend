@@ -30,6 +30,16 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen">
+      {/* Toggle de tema — flotante (esta pantalla no tiene navbar) */}
+      <button
+        type="button"
+        onClick={toggleTheme}
+        className="fixed right-4 top-4 z-50 grid size-10 place-items-center border border-gray-200 bg-white/80 text-gray-500 backdrop-blur transition hover:border-strobe hover:text-strobe dark:border-white/15 dark:bg-void/80 dark:text-muted"
+        aria-label={isDark ? 'Modo claro' : 'Modo oscuro'}
+      >
+        {isDark ? '☀️' : '🌙'}
+      </button>
+
       {/* Left decorative panel — hidden on mobile */}
       <div className="relative hidden w-1/2 overflow-hidden bg-gray-50 dark:bg-void lg:block">
         {/* Grid background */}
