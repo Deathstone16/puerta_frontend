@@ -27,6 +27,11 @@ export default function AsignarPersonalModal({ open, onClose, eventos = [] }) {
   const selectedPerson = personalList.find((p) => String(p.id) === String(selectedPersonal))
   const isRrpp = selectedPerson?.rol === 'rrpp'
 
+  // Filter out personnel already assigned to the selected event
+  const availablePersonal = selectedEvento
+    ? personalList.filter((p) => !p.eventos?.some((e) => String(e.id) === String(selectedEvento)))
+    : personalList
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!selectedPersonal || !selectedEvento || submitting) return
@@ -68,7 +73,7 @@ export default function AsignarPersonalModal({ open, onClose, eventos = [] }) {
               <span className="mb-2 block font-mono text-[9px] font-bold uppercase tracking-wider text-muted">Personal <span className="text-door-red">*</span></span>
               <select required className="field" value={selectedPersonal} onChange={(e) => { setSelectedPersonal(e.target.value); setApiError('') }}>
                 <option value="">Seleccionar persona...</option>
-                {personalList.map((p) => (
+                {availablePersonal.map((p) => (
                   <option key={p.id} value={p.id}>{p.nombre} ({p.rol}) — @{p.username}</option>
                 ))}
               </select>
@@ -76,7 +81,7 @@ export default function AsignarPersonalModal({ open, onClose, eventos = [] }) {
 
             <label className="block">
               <span className="mb-2 block font-mono text-[9px] font-bold uppercase tracking-wider text-muted">Evento <span className="text-door-red">*</span></span>
-              <select required className="field" value={selectedEvento} onChange={(e) => { setSelectedEvento(e.target.value); setApiError('') }}>
+              <select required className="field" value={selectedEvento} onChange={(e) => { setSelectedEvento(e.target.value); setSelectedPersonal(''); setApiError('') }}>
                 <option value="">Seleccionar evento...</option>
                 {eventos.filter((ev) => ev.estado !== 'cancelado').map((ev) => (
                   <option key={ev.id} value={ev.id}>{ev.nombre}</option>

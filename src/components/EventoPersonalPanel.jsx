@@ -121,6 +121,19 @@ export default function EventoPersonalPanel({ eventoId, eventoNombre, onClose })
     finally { setBusy(false) }
   }
 
+  const unassign = async (personId) => {
+    const person = allPersonal.find((p) => p.id === personId)
+    const nombre = person?.nombre || 'este personal'
+    if (!window.confirm(`¿Seguro que querés desasignar a "${nombre}" de "${eventoNombre}"?`)) return
+    setBusy(true)
+    try {
+      await api.delete(`/personal/${personId}/asignar-evento/`, { body: { evento_id: eventoId } })
+      setSuccessMsg(`${nombre} desasignado de ${eventoNombre}`)
+      loadData()
+    } catch { /* */ }
+    finally { setBusy(false) }
+  }
+
   const selectRrpp = (person) => { setPendingRrpp(person); setComisionForm({ tipo: 'fijo', valor: '' }) }
   const cancelPending = () => { setPendingRrpp(null) }
   const confirmRrpp = async () => {
@@ -150,6 +163,7 @@ export default function EventoPersonalPanel({ eventoId, eventoNombre, onClose })
 
       {/* RRPP Section */}
       <PillSection title="RRPP" items={assignedRrpp} color="border-strobe/50 bg-strobe/10 text-strobe"
+        onRemove={unassign}
         onAdd={!pendingRrpp ? { available: availableRrpp, onSelect: selectRrpp } : null}
         addPlaceholder="Agregar RRPP..."
       >
@@ -171,12 +185,14 @@ export default function EventoPersonalPanel({ eventoId, eventoNombre, onClose })
 
       {/* Guardias Section */}
       <PillSection title="Guardias" items={assignedGuardias} color="border-cyan-400/50 bg-cyan-400/10 text-cyan-400"
+        onRemove={unassign}
         onAdd={{ available: availableGuardias, onSelect: assignDirect }}
         addPlaceholder="Agregar guardia..."
       />
 
       {/* Cajeras Section */}
       <PillSection title="Cajeras" items={assignedCajeras} color="border-emerald-400/50 bg-emerald-400/10 text-emerald-400"
+        onRemove={unassign}
         onAdd={{ available: availableCajeras, onSelect: assignDirect }}
         addPlaceholder="Agregar cajera..."
       />
