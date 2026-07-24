@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import ConfirmDialog from '../components/ConfirmDialog'
 import Icon from '../components/Icons'
 import OrganizadorFormModal from '../components/OrganizadorFormModal'
 import { useAuth } from '../context/AuthContext'
@@ -46,9 +47,15 @@ export default function AdminPage() {
   const { organizadores, loading: loadingOrgs, refetch } = useOrganizadores()
   const [showModal, setShowModal] = useState(false)
   const [tab, setTab] = useState('metricas')
+  const [deactivateTarget, setDeactivateTarget] = useState(null)
 
-  const handleDeactivate = async (id, nombre) => {
-    if (!window.confirm(`¿Desactivar al organizador "${nombre}"?`)) return
+  const handleDeactivate = (id, nombre) => {
+    setDeactivateTarget({ id, nombre })
+  }
+
+  const confirmDeactivate = async () => {
+    const { id } = deactivateTarget
+    setDeactivateTarget(null)
     try {
       await apiRequest(`/admin/organizadores/${id}/`, { method: 'DELETE' })
       refetch()
@@ -250,6 +257,16 @@ export default function AdminPage() {
           </section>
         )}
       </main>
+      <ConfirmDialog
+        open={Boolean(deactivateTarget)}
+        title="Desactivar organizador"
+        message={`¿Desactivar al organizador "${deactivateTarget?.nombre || ''}"?`}
+        confirmText="Desactivar"
+        cancelText="Cancelar"
+        destructive
+        onConfirm={confirmDeactivate}
+        onCancel={() => setDeactivateTarget(null)}
+      />
     </div>
   )
 }

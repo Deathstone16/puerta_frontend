@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor, fireEvent } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import AuditoriaRrppTab from './AuditoriaRrppTab'
 
 vi.mock('../../lib/api', () => ({
@@ -19,8 +19,6 @@ const testEventos = [{ id: 1, nombre: 'Noche Electro', fecha: '2024-06-15' }]
 
 const baseProps = {
   eventos: testEventos,
-  onCreateRrpp: vi.fn(),
-  onAsignarRrpp: vi.fn(),
 }
 
 describe('AuditoriaRrppTab', () => {
@@ -120,29 +118,5 @@ describe('AuditoriaRrppTab', () => {
     await waitFor(() => {
       expect(screen.getByTestId('empty-state')).toBeInTheDocument()
     })
-  })
-
-  it('renders Alta RRPP and Asignar RRPP buttons', async () => {
-    api.get.mockResolvedValueOnce(testRankingRrpp)
-    render(<AuditoriaRrppTab {...baseProps} />)
-
-    expect(screen.getByTestId('btn-alta-rrpp')).toBeInTheDocument()
-    expect(screen.getByTestId('btn-asignar-rrpp')).toBeInTheDocument()
-  })
-
-  it('calls onCreateRrpp when Alta RRPP is clicked', () => {
-    api.get.mockResolvedValueOnce(testRankingRrpp)
-    render(<AuditoriaRrppTab {...baseProps} />)
-
-    fireEvent.click(screen.getByTestId('btn-alta-rrpp'))
-    expect(baseProps.onCreateRrpp).toHaveBeenCalledOnce()
-  })
-
-  it('calls onAsignarRrpp when Asignar RRPP is clicked', () => {
-    api.get.mockResolvedValueOnce(testRankingRrpp)
-    render(<AuditoriaRrppTab {...baseProps} />)
-
-    fireEvent.click(screen.getByTestId('btn-asignar-rrpp'))
-    expect(baseProps.onAsignarRrpp).toHaveBeenCalledOnce()
   })
 })

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import ConfirmDialog from '../components/ConfirmDialog'
 import Icon from '../components/Icons'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../lib/api'
@@ -17,6 +18,7 @@ export default function RrppListaPage() {
   const [editingId, setEditingId] = useState(null)
   const [editForm, setEditForm] = useState(EMPTY_FORM)
   const [busy, setBusy] = useState(false)
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null)
 
   // Load data
   const loadData = useCallback(async () => {
@@ -58,8 +60,12 @@ export default function RrppListaPage() {
   }
 
   // Delete from list
-  const handleDelete = async (guestId) => {
-    if (!window.confirm('¿Eliminar este invitado de la lista?')) return
+  const handleDelete = (guestId) => {
+    setDeleteConfirmId(guestId)
+  }
+  const confirmDelete = async () => {
+    const guestId = deleteConfirmId
+    setDeleteConfirmId(null)
     setBusy(true)
     try { await api.post(`/rrpp/eliminar-invitado/${guestId}/`, {}) } catch { /* demo */ }
     setGuests((prev) => prev.filter((g) => g.id !== guestId))
@@ -115,6 +121,7 @@ export default function RrppListaPage() {
   }
 
   return (
+    <>
     <main className="min-h-screen bg-white dark:bg-void">
       {/* Header */}
       <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur dark:border-white/10 dark:bg-void/95">
@@ -228,5 +235,16 @@ export default function RrppListaPage() {
         </div>
       </div>
     </main>
+    <ConfirmDialog
+      open={Boolean(deleteConfirmId)}
+      title="Eliminar invitado"
+      message="¿Eliminar este invitado de la lista?"
+      confirmText="Eliminar"
+      cancelText="Cancelar"
+      destructive
+      onConfirm={confirmDelete}
+      onCancel={() => setDeleteConfirmId(null)}
+    />
+    </>
   )
 }
