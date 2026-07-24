@@ -19,11 +19,14 @@ export default function CheckoutPage() {
   useEffect(() => { api.get(`/eventos/${id}/`).then((data) => setEvent(data)).catch(() => {}) }, [id])
   const amounts = useMemo(() => {
     if (!event) return { ticket: 0, drink: 0, mp: 0, service: 0, total: 0 }
-    const ticket = event.precio_base || Math.round((event.precio_publicado || 0) * .82)
+    // REQ-4.1: usar el desglose que calcula el backend, sin fees hardcodeados.
+    const desglose = event.desglose_precio || {}
+    const ticket = desglose.precio_base ?? event.precio_base ?? 0
+    const mp = desglose.fee_mp ?? 0
+    const service = desglose.fee_norware ?? 0
     const drink = choice.combo === 'tragos' ? 2500 : 0
-    const mp = Math.round(ticket * .05)
-    const service = Math.max(250, (event.precio_publicado || 0) - ticket) + drink
-    return { ticket, drink, mp, service, total: ticket + service + mp }
+    const publicado = desglose.precio_publicado ?? event.precio_publicado ?? (ticket + mp + service)
+    return { ticket, drink, mp, service, total: publicado + drink }
   }, [event, choice.combo])
   const update = (key) => (e) => setBuyer((current) => ({ ...current, [key]: e.target.value }))
 
