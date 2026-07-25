@@ -135,7 +135,13 @@ export default function AdminPage() {
                   <p className="mt-5 font-mono text-[10px] uppercase tracking-widest text-gray-500 dark:text-muted">Cargando métricas</p>
                 </div>
               </div>
-            ) : data && (
+            ) : !data ? (
+              <div className="panel grid min-h-48 place-items-center p-8 text-center">
+                <Icon name="calendar" size={38} className="mx-auto text-gray-400 dark:text-muted" />
+                <p className="display-title mt-5 text-2xl">SIN MÉTRICAS</p>
+                <p className="mt-3 text-sm text-gray-500 dark:text-muted">No hay datos disponibles aún.</p>
+              </div>
+            ) : (
               <>
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" data-testid="admin-kpi-grid">
                   <div className="panel p-5" data-testid="kpi-card">

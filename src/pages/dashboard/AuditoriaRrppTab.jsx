@@ -19,6 +19,7 @@ function getConversionColor(tasa) {
 function fmtDate(dateStr) {
   if (!dateStr) return ''
   const d = new Date(dateStr)
+  if (Number.isNaN(d.getTime())) return ''
   return new Intl.DateTimeFormat('es-AR', { day: '2-digit', month: 'short' }).format(d)
 }
 

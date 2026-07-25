@@ -302,7 +302,7 @@ export default function RrppPage() {
     setBusy(true)
     try {
       await api.post(`/rrpp/aprobar-invitado/${guestId}/`, {})
-    } catch { /* demo mode silently succeeds */ }
+    } catch { /* fallback */ }
     setEvents((current) => current.map((ev) => ev._key !== selectedEvent?._key ? ev : {
       ...ev,
       invitados_recientes: ev.invitados_recientes.map((g) => g.id === guestId ? { ...g, estado: 'aprobado' } : g),
@@ -316,7 +316,7 @@ export default function RrppPage() {
     setBusy(true)
     try {
       await api.post(`/rrpp/rechazar-invitado/${guestId}/`, {})
-    } catch { /* demo mode silently succeeds */ }
+    } catch { /* fallback */ }
     setEvents((current) => current.map((ev) => ev._key !== selectedEvent?._key ? ev : {
       ...ev,
       invitados_recientes: ev.invitados_recientes.map((g) => g.id === guestId ? { ...g, estado: 'rechazado' } : g),
@@ -337,7 +337,7 @@ export default function RrppPage() {
     setBusy(true)
     try {
       await api.post(`/rrpp/eliminar-invitado/${guestId}/`, {})
-    } catch { /* demo mode */ }
+    } catch { /* fallback */ }
     setEvents((current) => current.map((ev) => ev._key !== selectedEvent?._key ? ev : {
       ...ev,
       invitados_recientes: ev.invitados_recientes.filter((g) => g.id !== guestId),

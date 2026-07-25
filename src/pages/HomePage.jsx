@@ -23,7 +23,7 @@ export default function HomePage() {
 
   const visibleEvents = useMemo(() => events.filter((event) => {
     const matchesGenre = genre === 'Todas' || event.genero?.toLowerCase().includes(genre.toLowerCase())
-    const haystack = `${event.nombre} ${event.club} ${event.ciudad} ${event.genero}`.toLowerCase()
+    const haystack = `${event.nombre}`.toLowerCase()
     return matchesGenre && (!query || haystack.includes(query))
   }), [events, genre, query])
 

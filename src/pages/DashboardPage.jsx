@@ -64,9 +64,12 @@ export default function DashboardPage() {
   // Fetch staff list (to check for cajeras)
   useEffect(() => {
     let active = true
-    api.get('/personal/')
-      .then((data) => { if (active) setStaffList(Array.isArray(data) ? data : []) })
-      .catch(() => { if (active) setStaffList([]) })
+    const loadStaff = () => {
+      api.get('/personal/')
+        .then((data) => { if (active) setStaffList(Array.isArray(data) ? data : []) })
+        .catch(() => { if (active) setTimeout(loadStaff, 3000) })
+    }
+    loadStaff()
     return () => { active = false }
   }, [])
 

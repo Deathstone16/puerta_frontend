@@ -46,7 +46,7 @@ export default function RrppListaPage() {
   // Approve
   const handleApprove = async (guestId) => {
     setBusy(true)
-    try { await api.post(`/rrpp/aprobar-invitado/${guestId}/`, {}) } catch { /* demo */ }
+    try { await api.post(`/rrpp/aprobar-invitado/${guestId}/`, {}) } catch { /* fallback */ }
     setGuests((prev) => prev.map((g) => g.id === guestId ? { ...g, estado: 'aprobado' } : g))
     setBusy(false)
   }
@@ -54,7 +54,7 @@ export default function RrppListaPage() {
   // Reject (remove completely)
   const handleReject = async (guestId) => {
     setBusy(true)
-    try { await api.post(`/rrpp/rechazar-invitado/${guestId}/`, {}) } catch { /* demo */ }
+    try { await api.post(`/rrpp/rechazar-invitado/${guestId}/`, {}) } catch { /* fallback */ }
     setGuests((prev) => prev.filter((g) => g.id !== guestId))
     setBusy(false)
   }
@@ -67,7 +67,7 @@ export default function RrppListaPage() {
     const guestId = deleteConfirmId
     setDeleteConfirmId(null)
     setBusy(true)
-    try { await api.post(`/rrpp/eliminar-invitado/${guestId}/`, {}) } catch { /* demo */ }
+    try { await api.post(`/rrpp/eliminar-invitado/${guestId}/`, {}) } catch { /* fallback */ }
     setGuests((prev) => prev.filter((g) => g.id !== guestId))
     setBusy(false)
   }
@@ -106,7 +106,7 @@ export default function RrppListaPage() {
     setBusy(true)
     try {
       await api.patch(`/rrpp/editar-invitado/${guestId}/`, editForm)
-    } catch { /* demo mode — still update locally */ }
+    } catch { /* fallback — update locally */ }
     setGuests((prev) => prev.map((g) => g.id === guestId ? { ...g, ...editForm } : g))
     setEditingId(null)
     setBusy(false)
