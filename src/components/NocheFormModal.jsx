@@ -91,7 +91,13 @@ export default function NocheFormModal({ open, onClose, evento = null, onSuccess
   useEffect(() => () => { if (debounceRef.current) clearTimeout(debounceRef.current) }, [])
 
   const updateField = (field) => (e) => {
-    const value = e.target.value
+    let value = e.target.value
+    // Filter numeric-only fields
+    if (field === 'aforo_max') {
+      value = value.replace(/[^0-9]/g, '')
+    } else if (field === 'precio_base') {
+      value = value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1')
+    }
     setForm((prev) => ({ ...prev, [field]: value }))
     setErrors((prev) => ({ ...prev, [field]: '' }))
     setApiError('')
@@ -201,8 +207,8 @@ export default function NocheFormModal({ open, onClose, evento = null, onSuccess
             <span className="mb-2 block font-mono text-[9px] font-bold uppercase tracking-wider text-muted">Aforo máximo</span>
             <input
               required
-              type="number"
-              min="1"
+              type="text"
+              inputMode="numeric"
               className={`field ${errors.aforo_max ? 'border-door-red' : ''}`}
               value={form.aforo_max}
               onChange={updateField('aforo_max')}
@@ -217,8 +223,8 @@ export default function NocheFormModal({ open, onClose, evento = null, onSuccess
             <span className="mb-2 block font-mono text-[9px] font-bold uppercase tracking-wider text-muted">Precio base ($)</span>
             <input
               required
-              type="number"
-              min="0"
+              type="text"
+              inputMode="decimal"
               className={`field ${errors.precio_base ? 'border-door-red' : ''}`}
               value={form.precio_base}
               onChange={updateField('precio_base')}

@@ -77,6 +77,7 @@ export default function GuardPage() {
   }, [capacity])
 
   const loadCapacity = useCallback(async () => {
+    if (!eventId) return
     try {
       const data = await api.get(`/dashboard/aforo/${eventId}/`)
       setCapacity(data)
@@ -112,6 +113,10 @@ export default function GuardPage() {
 
   const handleDniSearch = (event) => {
     event.preventDefault()
+    if (!eventId) {
+      setInlineError('No tenés un evento asignado. Contactá al organizador.')
+      return
+    }
     if (!/^\d{7,8}$/.test(dni)) {
       setInlineError('Ingresá un DNI válido de 7 u 8 dígitos.')
       return
@@ -159,6 +164,19 @@ export default function GuardPage() {
     setAttendee(null)
     setInlineError('')
     setDni('')
+  }
+
+  if (!eventId) {
+    return (
+      <main className="grid min-h-[100dvh] place-items-center bg-white text-center dark:bg-void">
+        <div>
+          <Icon name="shield" size={40} className="mx-auto text-muted" />
+          <p className="mt-5 font-display text-2xl text-gray-900 dark:text-paper-text">SIN EVENTO ASIGNADO</p>
+          <p className="mt-3 max-w-xs text-sm leading-6 text-gray-500 dark:text-muted">No tenés un evento activo asignado. Pedile al organizador que te asigne uno y volvé a iniciar sesión.</p>
+          <button type="button" onClick={logout} className="btn-primary mt-7">CERRAR SESIÓN</button>
+        </div>
+      </main>
+    )
   }
 
   return (

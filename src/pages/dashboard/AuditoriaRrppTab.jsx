@@ -43,7 +43,14 @@ export default function AuditoriaRrppTab({ eventos = [] }) {
       const data = await api.get(`/dashboard/ranking-rrpp/${eventoId}/`)
       setRanking(Array.isArray(data) ? data : [])
     } catch {
-      if (!isPoll) setRanking([])
+      if (!isPoll) {
+        // Retry once after 2s (handles token refresh race condition)
+        setTimeout(() => {
+          api.get(`/dashboard/ranking-rrpp/${eventoId}/`)
+            .then((data) => setRanking(Array.isArray(data) ? data : []))
+            .catch(() => setRanking([]))
+        }, 2000)
+      }
     } finally {
       setLoading(false)
     }

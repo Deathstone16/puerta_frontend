@@ -67,7 +67,7 @@ export default function LoginPage() {
 
           {/* Center: Product tagline */}
           <div>
-            <p className="font-display text-[80px] leading-[.85] tracking-[-0.04em] text-gray-900/[.04] dark:text-white/[.03]">
+            <p className="font-display text-[80px] leading-[.85] tracking-[-0.04em] text-gray-900/[.08] dark:text-white/[.06]">
               CONTROL<br />TOTAL
             </p>
             <p className="mt-8 font-mono text-[10px] uppercase tracking-wider text-gray-500 dark:text-muted">

@@ -176,10 +176,6 @@ export default function DashboardPage() {
               </span>
             </div>
           )}
-          {/* Create button */}
-          <button onClick={() => openModal('noche-create')} className="btn-primary">
-            <Icon name="plus" size={17} /> Nuevo evento
-          </button>
         </div>
       </div>
 

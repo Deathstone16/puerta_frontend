@@ -171,6 +171,7 @@ export default function CashierPage() {
     setUndoRemaining(transaction ? TEN_MINUTES : 0)
     adjustCapacity(addedEntries)
     setFeedback({ type: 'success', message: result.mensaje || 'Operación registrada', detail, transaction })
+    loadCierre()
   }
 
   const submitGeneralSale = async (people) => {
@@ -243,43 +244,43 @@ export default function CashierPage() {
 
   <form onSubmit={searchDni} className="mt-4 border border-white/15 bg-floor p-3"><label className="font-mono text-[9px] font-bold uppercase tracking-wider text-muted">Buscar lista por DNI</label><div className="mt-2 flex gap-2"><input inputMode="numeric" value={dni} onChange={(event) => { setDni(event.target.value.replace(/\D/g, '').slice(0, 8)); setInlineError('') }} className="field min-h-14 flex-1 text-center text-lg tracking-wider" placeholder="38 987 654"/><button disabled={busy} className="grid min-h-14 w-16 place-items-center bg-white text-void disabled:opacity-40" aria-label="Buscar DNI"><Icon name="search" size={22}/></button></div></form>
 
-  {inlineError && <div className="mt-4 border border-door-red/50 bg-door-red/10 p-4"><p className="font-mono text-xs font-bold uppercase text-door-red">Atención</p><p className="mt-2 text-sm leading-5 text-gray-900 dark:text-paper-text">{inlineError}</p></div>}
+  {inlineError && <div className="mt-4 border border-door-red/50 bg-door-red/10 p-4"><p className="font-mono text-xs font-bold uppercase text-door-red">Atención</p><p className="mt-2 text-sm leading-5 text-paper-text">{inlineError}</p></div>}
 
-  <section className="mt-4 min-h-40 border-2 border-white/15 bg-floor p-5" aria-live="polite">{selected ? <><div className="flex items-center justify-between"><p className="eyebrow">Resultado inmediato</p><span className={`border px-2 py-1 font-mono text-[9px] font-bold uppercase ${isWeb ? 'border-strobe text-strobe' : isVentaGeneral ? 'border-emerald-400 text-emerald-300' : 'border-amber-300 text-amber-300'}`}>{isWeb ? 'Entrada web' : isVentaGeneral ? 'Venta Gral' : 'Lista RRPP'}</span></div><h2 className="display-title mt-4 text-4xl text-gray-900 dark:text-paper-text">{selected.nombre} {selected.apellido}</h2><div className="mt-5 grid grid-cols-2 gap-4 font-mono"><div><p className="text-[9px] uppercase text-gray-500 dark:text-muted">DNI</p><p className="mt-1 text-sm font-bold text-gray-900 dark:text-paper-text">{selected.dni}</p></div><div><p className="text-[9px] uppercase text-gray-500 dark:text-muted">Estado</p><p className="mt-1 text-sm font-bold text-gray-900 dark:text-paper-text">{String(selected.estado).replaceAll('_', ' ')}</p></div>{isList && <><div><p className="text-[9px] uppercase text-gray-500 dark:text-muted">RRPP</p><p className="mt-1 text-sm font-bold text-gray-900 dark:text-paper-text">{selected.rrpp_nombre}</p></div><div><p className="text-[9px] uppercase text-gray-500 dark:text-muted">A cobrar</p><p className="mt-1 text-sm font-bold text-strobe">{formatMoney(selected.monto_pago)}</p></div></>}</div></> : <div className="grid min-h-32 place-items-center text-center"><div><Icon name="ticket" size={30} className="mx-auto text-muted"/><p className="mt-3 font-mono text-[10px] uppercase leading-5 text-muted">Escaneá un QR o buscá un DNI.<br/>El resultado aparece acá.</p></div></div>}</section>
+  <section className="mt-4 min-h-40 border-2 border-white/15 bg-floor p-5" aria-live="polite">{selected ? <><div className="flex items-center justify-between"><p className="eyebrow">Resultado inmediato</p><span className={`border px-2 py-1 font-mono text-[9px] font-bold uppercase ${isWeb ? 'border-strobe text-strobe' : isVentaGeneral ? 'border-emerald-400 text-emerald-300' : 'border-amber-300 text-amber-300'}`}>{isWeb ? 'Entrada web' : isVentaGeneral ? 'Venta Gral' : 'Lista RRPP'}</span></div><h2 className="display-title mt-4 text-4xl text-paper-text">{selected.nombre} {selected.apellido}</h2><div className="mt-5 grid grid-cols-2 gap-4 font-mono"><div><p className="text-[9px] uppercase text-muted">DNI</p><p className="mt-1 text-sm font-bold text-paper-text">{selected.dni}</p></div><div><p className="text-[9px] uppercase text-muted">Estado</p><p className="mt-1 text-sm font-bold text-paper-text">{String(selected.estado).replaceAll('_', ' ')}</p></div>{isList && <><div><p className="text-[9px] uppercase text-muted">RRPP</p><p className="mt-1 text-sm font-bold text-paper-text">{selected.rrpp_nombre}</p></div><div><p className="text-[9px] uppercase text-muted">A cobrar</p><p className="mt-1 text-sm font-bold text-strobe">{formatMoney(selected.monto_pago)}</p></div></>}</div></> : <div className="grid min-h-32 place-items-center text-center"><div><Icon name="ticket" size={30} className="mx-auto text-muted"/><p className="mt-3 font-mono text-[10px] uppercase leading-5 text-muted">Escaneá un QR o buscá un DNI.<br/>El resultado aparece acá.</p></div></div>}</section>
 
   <section className="mt-4" aria-labelledby="actions-title"><p id="actions-title" className="eyebrow mb-3">Acciones rápidas</p><button type="button" disabled={busy} onClick={() => setSaleOpen(true)} className="flex min-h-24 w-full items-center justify-center gap-3 bg-amber-300 px-3 text-void disabled:opacity-50"><Icon name="plus" size={25}/><span className="font-display text-lg">VENTA GENERAL</span></button></section>
 
   {lastTransaction && undoRemaining > 0 && <section className="mt-4 border border-amber-300/60 bg-amber-300/5 p-4"><div className="flex items-center gap-3"><Icon name="clock" className="shrink-0 text-amber-300"/><div className="min-w-0 flex-1"><p className="font-mono text-[9px] font-bold uppercase text-amber-300">Última operación · {formatCountdown(undoRemaining)}</p><p className="mt-1 truncate text-xs text-muted">{lastTransaction.detail}</p></div><button type="button" disabled={busy} onClick={() => undoTransaction()} className="min-h-11 border border-amber-300 px-3 font-mono text-[9px] font-bold uppercase text-amber-300 disabled:opacity-40">Deshacer</button></div></section>}
 
   {/* Cierre de Caja */}
-  <section className="mt-6 border-t border-gray-200 pt-5 dark:border-white/10">
+  <section className="mt-6 border-t border-white/10 pt-5">
     <div className="mb-4 flex items-center justify-between">
       <div>
         <p className="eyebrow">Resumen</p>
-        <h2 className="display-title mt-1 text-2xl text-gray-900 dark:text-paper-text">CIERRE DE CAJA</h2>
+        <h2 className="display-title mt-1 text-2xl text-paper-text">CIERRE DE CAJA</h2>
       </div>
-      <button type="button" onClick={loadCierre} disabled={cierreLoading} className="grid size-9 place-items-center border border-gray-200 text-gray-500 hover:border-strobe hover:text-strobe dark:border-white/15 dark:text-muted" aria-label="Actualizar cierre"><Icon name="refresh" size={16} /></button>
+      <button type="button" onClick={loadCierre} disabled={cierreLoading} className="grid size-9 place-items-center border border-white/15 text-muted hover:border-strobe hover:text-strobe" aria-label="Actualizar cierre"><Icon name="refresh" size={16} /></button>
     </div>
     {cierreLoading ? (
-      <div className="grid min-h-24 place-items-center"><div className="size-6 animate-spin border-2 border-gray-200 border-t-strobe dark:border-white/10" /></div>
+      <div className="grid min-h-24 place-items-center"><div className="size-6 animate-spin border-2 border-white/10 border-t-strobe" /></div>
     ) : !cierre ? (
-      <p className="text-sm text-gray-500 dark:text-muted">No se pudo cargar el cierre de caja.</p>
+      <p className="text-sm text-muted">No se pudo cargar el cierre de caja.</p>
     ) : (
       <div className="grid gap-3 sm:grid-cols-3">
-        <div className="border border-gray-200 bg-gray-50 p-4 dark:border-white/10 dark:bg-void">
-          <p className="font-mono text-[9px] font-bold uppercase tracking-[.14em] text-gray-500 dark:text-muted">Efectivo</p>
-          <p className="mt-2 font-display text-2xl text-emerald-500 dark:text-emerald-300">{formatMoney(cierre.efectivo?.monto || 0)}</p>
-          <p className="mt-1 font-mono text-[9px] text-gray-400 dark:text-muted">{cierre.efectivo?.cantidad || 0} entradas</p>
+        <div className="border border-white/10 bg-void p-4">
+          <p className="font-mono text-[9px] font-bold uppercase tracking-[.14em] text-muted">Efectivo</p>
+          <p className="mt-2 font-display text-2xl text-emerald-300">{formatMoney(cierre.efectivo?.monto || 0)}</p>
+          <p className="mt-1 font-mono text-[9px] text-muted">{cierre.efectivo?.cantidad || 0} entradas</p>
         </div>
-        <div className="border border-gray-200 bg-gray-50 p-4 dark:border-white/10 dark:bg-void">
-          <p className="font-mono text-[9px] font-bold uppercase tracking-[.14em] text-gray-500 dark:text-muted">Transferencia</p>
+        <div className="border border-white/10 bg-void p-4">
+          <p className="font-mono text-[9px] font-bold uppercase tracking-[.14em] text-muted">Transferencia</p>
           <p className="mt-2 font-display text-2xl text-uv">{formatMoney(cierre.transferencia?.monto || 0)}</p>
-          <p className="mt-1 font-mono text-[9px] text-gray-400 dark:text-muted">{cierre.transferencia?.cantidad || 0} entradas</p>
+          <p className="mt-1 font-mono text-[9px] text-muted">{cierre.transferencia?.cantidad || 0} entradas</p>
         </div>
-        <div className="border border-gray-200 bg-gray-50 p-4 dark:border-white/10 dark:bg-void">
-          <p className="font-mono text-[9px] font-bold uppercase tracking-[.14em] text-gray-500 dark:text-muted">Total recaudado</p>
+        <div className="border border-white/10 bg-void p-4">
+          <p className="font-mono text-[9px] font-bold uppercase tracking-[.14em] text-muted">Total recaudado</p>
           <p className="mt-2 font-display text-2xl text-strobe">{formatMoney(cierre.total_recaudado || 0)}</p>
-          <p className="mt-1 font-mono text-[9px] text-gray-400 dark:text-muted">{(cierre.efectivo?.cantidad || 0) + (cierre.transferencia?.cantidad || 0) + (cierre.web?.cantidad || 0)} entradas totales</p>
+          <p className="mt-1 font-mono text-[9px] text-muted">{(cierre.efectivo?.cantidad || 0) + (cierre.transferencia?.cantidad || 0) + (cierre.web?.cantidad || 0)} entradas totales</p>
         </div>
       </div>
     )}

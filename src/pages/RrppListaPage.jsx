@@ -40,14 +40,14 @@ export default function RrppListaPage() {
   useEffect(() => { loadData() }, [loadData])
 
   // Split guests
-  const listaGuests = guests.filter((g) => g.estado !== 'pendiente')
-  const pendingGuests = guests.filter((g) => g.estado === 'pendiente')
+  const listaGuests = guests.filter((g) => g.estado !== 'pendiente' || g.aprobado_rrpp)
+  const pendingGuests = guests.filter((g) => g.estado === 'pendiente' && !g.aprobado_rrpp)
 
   // Approve
   const handleApprove = async (guestId) => {
     setBusy(true)
     try { await api.post(`/rrpp/aprobar-invitado/${guestId}/`, {}) } catch { /* fallback */ }
-    setGuests((prev) => prev.map((g) => g.id === guestId ? { ...g, estado: 'aprobado' } : g))
+    setGuests((prev) => prev.map((g) => g.id === guestId ? { ...g, aprobado_rrpp: true } : g))
     setBusy(false)
   }
 
