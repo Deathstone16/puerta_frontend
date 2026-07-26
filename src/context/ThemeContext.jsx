@@ -5,7 +5,7 @@ const ThemeContext = createContext(null)
 export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState(() => {
     if (typeof window === 'undefined') return 'light'
-    return localStorage.getItem('norware-theme') || 'dark'
+    return localStorage.getItem('norware-theme') || 'light'
   })
 
   useEffect(() => {

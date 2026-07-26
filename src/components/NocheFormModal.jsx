@@ -3,6 +3,7 @@ import Modal from './Modal'
 import Icon from './Icons'
 import { formatMoney } from '../lib/format'
 import { api } from '../lib/api'
+import { filterDecimal, filterInteger } from '../lib/inputFilters'
 
 /**
  * NocheFormModal — Create/edit event form with debounced price preview.
@@ -92,12 +93,9 @@ export default function NocheFormModal({ open, onClose, evento = null, onSuccess
 
   const updateField = (field) => (e) => {
     let value = e.target.value
-    // Filter numeric-only fields
-    if (field === 'aforo_max') {
-      value = value.replace(/[^0-9]/g, '')
-    } else if (field === 'precio_base') {
-      value = value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1')
-    }
+    // Los campos numéricos se normalizan antes de entrar al state
+    if (field === 'aforo_max') value = filterInteger(value)
+    else if (field === 'precio_base') value = filterDecimal(value)
     setForm((prev) => ({ ...prev, [field]: value }))
     setErrors((prev) => ({ ...prev, [field]: '' }))
     setApiError('')

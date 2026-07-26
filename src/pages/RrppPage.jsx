@@ -5,6 +5,7 @@ import GuestApprovalModal from '../components/GuestApprovalModal'
 import { useAuth } from '../context/AuthContext'
 import { formatMoney } from '../lib/format'
 import { api } from '../lib/api'
+import { filterDni, filterName } from '../lib/inputFilters'
 
 const EMPTY_FORM = { nombre: '', apellido: '', dni: '' }
 
@@ -232,7 +233,8 @@ export default function RrppPage() {
   }
 
   const updateForm = (field) => (event) => {
-    const value = field === 'dni' ? event.target.value.replace(/\D/g, '').slice(0, 8) : event.target.value
+    const raw = event.target.value
+    const value = field === 'dni' ? filterDni(raw) : (field === 'nombre' || field === 'apellido') ? filterName(raw) : raw
     setForm((current) => ({ ...current, [field]: value }))
     setFormError('')
     setFeedback(null)

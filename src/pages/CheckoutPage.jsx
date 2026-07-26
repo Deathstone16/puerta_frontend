@@ -1,14 +1,20 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import Icon from '../components/Icons'
 import { usePurchase } from '../context/PurchaseContext'
 import { formatMoney } from '../lib/format'
 import { api } from '../lib/api'
+import { filterDni, filterName } from '../lib/inputFilters'
+
+const FILTERS = { nombre: filterName, apellido: filterName, dni: filterDni }
 
 export default function CheckoutPage() {
   const { id } = useParams()
   const location = useLocation()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  // ?ref=<slug> del link RRPP para atribuir la venta
+  const ref = searchParams.get('ref')
   const { setSelection } = usePurchase()
   const [event, setEvent] = useState(null)
   const [buyer, setBuyer] = useState({ nombre: '', apellido: '', dni: '', email: '' })
@@ -25,7 +31,11 @@ export default function CheckoutPage() {
     const service = Math.max(250, (event.precio_publicado || 0) - ticket) + drink
     return { ticket, drink, mp, service, total: ticket + service + mp }
   }, [event, choice.combo])
-  const update = (key) => (e) => setBuyer((current) => ({ ...current, [key]: e.target.value }))
+  const update = (key) => (e) => {
+    const filter = FILTERS[key]
+    const value = filter ? filter(e.target.value) : e.target.value
+    setBuyer((current) => ({ ...current, [key]: value }))
+  }
 
   if (!event) return <section className="min-h-[calc(100vh-64px)] py-8 md:py-14"><div className="container-page max-w-5xl"><p className="text-muted">Cargando evento...</p></div></section>
 
@@ -35,7 +45,7 @@ export default function CheckoutPage() {
     const purchase = { event, buyer, choice, amounts }
     setSelection(purchase)
     try {
-      const data = await api.post('/pagos/preferencia/', { evento_id: event.id, ...buyer, price_type: choice.priceType, combo: choice.combo })
+      const data = await api.post('/pagos/preferencia/', { evento_id: event.id, ...buyer, price_type: choice.priceType, combo: choice.combo, link_slug: ref || undefined })
       if (data?.init_point) window.location.assign(data.init_point)
       else navigate('/procesando', { state: { token: data?.token } })
     } catch (apiError) {
@@ -46,11 +56,11 @@ export default function CheckoutPage() {
 
   return (
     <section className="min-h-[calc(100vh-64px)] py-8 md:py-14"><div className="container-page max-w-5xl">
-      <Link to={`/evento/${id}`} className="mb-8 flex w-fit items-center gap-2 font-mono text-[10px] font-bold uppercase text-muted hover:text-strobe"><Icon name="back" size={16}/> Volver</Link>
+      <Link to={`/evento/${id}${ref ? `?ref=${ref}` : ''}`} className="mb-8 flex w-fit items-center gap-2 font-mono text-[10px] font-bold uppercase text-muted hover:text-strobe"><Icon name="back" size={16}/> Volver</Link>
       <div className="grid gap-8 lg:grid-cols-[1fr_380px]">
         <form onSubmit={pay} className="order-2 lg:order-1">
           <p className="eyebrow mb-3">Datos de la entrada</p><h1 className="display-title text-5xl sm:text-7xl">RESUMEN</h1><p className="mt-4 max-w-xl text-sm leading-6 text-muted">Usamos estos datos para emitir tu ticket. Tienen que coincidir con el DNI que presentes en puerta.</p>
-          <div className="mt-8 grid gap-3 sm:grid-cols-2"><input required className="field" placeholder="NOMBRE" value={buyer.nombre} onChange={update('nombre')}/><input required className="field" placeholder="APELLIDO" value={buyer.apellido} onChange={update('apellido')}/><input required className="field" inputMode="numeric" pattern="[0-9]{7,9}" placeholder="DNI SIN PUNTOS" value={buyer.dni} onChange={update('dni')}/><input required type="email" className="field" placeholder="EMAIL" value={buyer.email} onChange={update('email')}/></div>
+          <div className="mt-8 grid gap-3 sm:grid-cols-2"><input required maxLength={80} className="field" placeholder="NOMBRE" value={buyer.nombre} onChange={update('nombre')}/><input required maxLength={80} className="field" placeholder="APELLIDO" value={buyer.apellido} onChange={update('apellido')}/><input required className="field" inputMode="numeric" minLength={7} maxLength={8} placeholder="DNI SIN PUNTOS" value={buyer.dni} onChange={update('dni')}/><input required type="email" className="field" placeholder="EMAIL" value={buyer.email} onChange={update('email')}/></div>
           <div className="mt-8 border-l-2 border-strobe bg-strobe/5 p-4"><p className="font-mono text-xs font-bold text-strobe">PAGO SEGURO CON MERCADO PAGO</p><p className="mt-2 text-xs leading-5 text-muted">Al continuar vas a Mercado Pago y, cuando termine la operación, volvés automáticamente a tu ticket.</p></div>
           {error && <p className="mt-4 border border-door-red/40 bg-door-red/10 p-3 text-xs text-door-red">{error}</p>}
           <button disabled={status === 'loading'} className="btn-primary mt-6 w-full">{status === 'loading' ? 'CONECTANDO CON MERCADO PAGO...' : `PAGAR ${formatMoney(amounts.total)} CON MERCADO PAGO`} <Icon name="arrow" size={17}/></button>
