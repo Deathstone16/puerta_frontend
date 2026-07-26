@@ -16,7 +16,7 @@ function ListForm({ event, onClose }) {
     setState('loading')
     setMessage('')
     try {
-      await api.post(`/lista/${event.slug}/anotar/`, form)
+      await api.post(`/lista/${event.lista_slug}/anotar/`, form)
       setState('success')
     } catch (error) {
       if (error.status === 0) setState('success')
@@ -86,7 +86,7 @@ export default function EventDetailPage() {
           <h3 className="mt-7 font-mono text-[10px] font-bold uppercase tracking-[.18em] text-muted">Elegí tu combo</h3>
           <div className="mt-3 grid gap-2">{[['entrada','SOLO ENTRADA',0],['tragos','ENTRADA + 2 TRAGOS',2500]].map(([value,label,extra]) => <label key={value} className={`flex cursor-pointer items-center justify-between border p-4 transition ${combo === value ? 'border-strobe bg-strobe/5' : 'border-white/15 hover:border-white/30'}`}><span className="flex items-center gap-3"><input type="radio" name="combo" checked={combo === value} onChange={() => setCombo(value)} className="accent-cyan-400"/><span className="font-mono text-xs font-bold">{label}</span></span><span className="font-mono text-xs text-muted">{extra ? `+${formatMoney(extra)}` : 'INCLUIDO'}</span></label>)}</div>
           <Link to={`/checkout/${event.id}`} state={{ priceType, combo, total: base }} className="btn-primary mt-5 w-full">COMPRAR COMBO — {formatMoney(base)} <Icon name="arrow" size={17}/></Link>
-          <button onClick={() => setModalOpen(true)} className={`btn-secondary mt-3 w-full${event.habilitar_lista === false ? ' hidden' : ''}`}>SUMARME A LA LISTA</button>
+          <button onClick={() => setModalOpen(true)} className={`btn-secondary mt-3 w-full${(event.habilitar_lista === false || !event.lista_slug) ? ' hidden' : ''}`}>SUMARME A LA LISTA</button>
         </aside>
       </div></section>
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} label="Sumarme a la lista"><ListForm event={event} onClose={() => setModalOpen(false)} /></Modal>
