@@ -129,6 +129,23 @@ function Metric({ label, value, accent = false }) {
   return <div className="min-w-0 overflow-hidden border border-gray-200 bg-gray-50 p-4 dark:border-white/10 dark:bg-void"><p className="truncate font-mono text-[9px] font-bold uppercase tracking-[.14em] text-gray-500 dark:text-muted">{label}</p><p className={`mt-2 truncate font-display text-2xl sm:text-3xl ${accent ? 'text-strobe' : 'text-gray-900 dark:text-paper-text'}`}>{value}</p></div>
 }
 
+// #11: filtros de estado para la lista de invitados del RRPP.
+const GUEST_FILTERS = [
+  { key: 'todos', label: 'Todos' },
+  { key: 'pendiente', label: 'Pendientes' },
+  { key: 'aprobado', label: 'Aprobados' },
+  { key: 'rechazado', label: 'Rechazados' },
+]
+
+function matchEstadoFiltro(estado, filtro) {
+  if (filtro === 'todos') return true
+  const e = String(estado || '').toLowerCase()
+  if (filtro === 'pendiente') return e === 'pendiente' || e === ''
+  if (filtro === 'aprobado') return e.includes('aprobado') || e === 'ingresado_final'
+  if (filtro === 'rechazado') return e.includes('rebotado') || e.includes('rechazad')
+  return true
+}
+
 function EventOption({ event, selected, onSelect }) {
   return <button type="button" onClick={onSelect} className={`block min-w-[250px] w-full border p-4 text-left transition lg:min-w-0 ${selected ? 'border-strobe bg-strobe/10' : 'border-gray-200 bg-gray-50 hover:border-gray-300 dark:border-white/10 dark:bg-floor dark:hover:border-white/30'}`}><div className="flex items-start justify-between gap-3"><p className={`font-display text-xl uppercase leading-none ${selected ? 'text-strobe' : 'text-gray-900 dark:text-paper-text'}`}>{event.nombre}</p></div><p className="mt-3 font-mono text-[9px] uppercase tracking-wider text-gray-500 dark:text-muted">{displayDate(event.fecha)}</p><p className="mt-1 text-xs text-gray-500 dark:text-muted">{event.club || ''}</p><div className="mt-4 flex items-center justify-between border-t border-gray-200 pt-3 font-mono text-[10px] uppercase dark:border-white/10"><span className="text-gray-500 dark:text-muted">Anotados</span><strong className="text-gray-900 dark:text-paper-text">{displayCount(event.anotados)} / {displayCount(event.cupo_max)}</strong></div></button>
 }
@@ -146,6 +163,8 @@ export default function RrppPage() {
   const [feedback, setFeedback] = useState(null)
   const [selectedGuest, setSelectedGuest] = useState(null)
   const [deleteConfirmId, setDeleteConfirmId] = useState(null)
+  const [guestFilter, setGuestFilter] = useState('todos')  // #11
+  const [guestSearch, setGuestSearch] = useState('')        // #11
 
   const loadPanel = useCallback(async () => {
     const sequence = requestRef.current.sequence + 1
@@ -190,6 +209,18 @@ export default function RrppPage() {
     () => events.find((event) => event._key === selectedId) || null,
     [events, selectedId],
   )
+
+  // #11: lista filtrada por estado + búsqueda (nombre o DNI).
+  const filteredGuests = useMemo(() => {
+    const all = selectedEvent?.invitados_recientes || []
+    const q = guestSearch.trim().toLowerCase()
+    return all.filter((g) =>
+      matchEstadoFiltro(g.estado, guestFilter)
+      && (q === ''
+        || `${g.nombre || ''} ${g.apellido || ''}`.toLowerCase().includes(q)
+        || String(g.dni || '').includes(q)),
+    )
+  }, [selectedEvent, guestFilter, guestSearch])
 
   const capacityPercent = useMemo(() => {
     if (selectedEvent?.cupo_max == null || selectedEvent?.anotados == null || selectedEvent.cupo_max <= 0) return null
@@ -372,9 +403,9 @@ export default function RrppPage() {
 
   {feedback && <div className={`mt-5 border p-4 ${feedback.type === 'error' ? 'border-door-red/60 bg-door-red/10 text-door-red' : 'border-emerald-400/60 bg-emerald-400/10 text-emerald-300'}`} role="status" aria-live="polite"><div className="flex items-center gap-3"><Icon name={feedback.type === 'error' ? 'close' : 'check'} className="shrink-0"/><p className="text-sm font-semibold">{feedback.message}</p><button type="button" onClick={() => setFeedback(null)} className="ml-auto grid size-9 shrink-0 place-items-center border border-current/30" aria-label="Cerrar mensaje"><Icon name="close" size={14}/></button></div></div>}
 
-  <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(300px,.8fr)]"><section className="panel p-5 sm:p-7"><p className="eyebrow">Alta manual</p><h2 className="display-title mt-2 text-3xl">ANOTAR INVITADO</h2><p className="mt-3 text-sm text-gray-500 dark:text-muted">Se agregará a <strong className="text-gray-900 dark:text-paper-text">{selectedEvent.nombre}</strong>.</p><form onSubmit={submitGuest} className="mt-6 grid gap-3 sm:grid-cols-2"><label className="block"><span className="mb-2 block font-mono text-[9px] font-bold uppercase tracking-wider text-muted">Nombre</span><input required maxLength={80} autoComplete="given-name" className="field" value={form.nombre} onChange={updateForm('nombre')} placeholder="NOMBRE"/></label><label className="block"><span className="mb-2 block font-mono text-[9px] font-bold uppercase tracking-wider text-muted">Apellido</span><input required maxLength={80} autoComplete="family-name" className="field" value={form.apellido} onChange={updateForm('apellido')} placeholder="APELLIDO"/></label><label className="block sm:col-span-2"><span className="mb-2 block font-mono text-[9px] font-bold uppercase tracking-wider text-muted">DNI</span><input required inputMode="numeric" autoComplete="off" pattern="[0-9]{7,8}" minLength={7} maxLength={8} className="field" value={form.dni} onChange={updateForm('dni')} placeholder="DNI SIN PUNTOS"/></label>{formError && <p className="border border-door-red/50 bg-door-red/10 p-3 text-sm text-door-red sm:col-span-2" role="alert">{formError}</p>}<button disabled={busy || (selectedEvent.cupo_max != null && selectedEvent.anotados != null && selectedEvent.anotados >= selectedEvent.cupo_max)} className="btn-primary mt-1 w-full sm:col-span-2">{busy ? 'ANOTANDO...' : 'ANOTAR EN ESTE EVENTO'}</button></form></section>
+  <div className="mt-5 space-y-5"><section className="panel p-5 sm:p-7"><p className="eyebrow">Alta manual</p><h2 className="display-title mt-2 text-3xl">ANOTAR INVITADO</h2><p className="mt-3 text-sm text-gray-500 dark:text-muted">Se agregará a <strong className="text-gray-900 dark:text-paper-text">{selectedEvent.nombre}</strong>.</p><form onSubmit={submitGuest} className="mt-6 grid gap-3 sm:grid-cols-2"><label className="block"><span className="mb-2 block font-mono text-[9px] font-bold uppercase tracking-wider text-muted">Nombre</span><input required maxLength={80} autoComplete="given-name" className="field" value={form.nombre} onChange={updateForm('nombre')} placeholder="NOMBRE"/></label><label className="block"><span className="mb-2 block font-mono text-[9px] font-bold uppercase tracking-wider text-muted">Apellido</span><input required maxLength={80} autoComplete="family-name" className="field" value={form.apellido} onChange={updateForm('apellido')} placeholder="APELLIDO"/></label><label className="block sm:col-span-2"><span className="mb-2 block font-mono text-[9px] font-bold uppercase tracking-wider text-muted">DNI</span><input required inputMode="numeric" autoComplete="off" pattern="[0-9]{7,8}" minLength={7} maxLength={8} className="field" value={form.dni} onChange={updateForm('dni')} placeholder="DNI SIN PUNTOS"/></label>{formError && <p className="border border-door-red/50 bg-door-red/10 p-3 text-sm text-door-red sm:col-span-2" role="alert">{formError}</p>}<button disabled={busy || (selectedEvent.cupo_max != null && selectedEvent.anotados != null && selectedEvent.anotados >= selectedEvent.cupo_max)} className="btn-primary mt-1 w-full sm:col-span-2">{busy ? 'ANOTANDO...' : 'ANOTAR EN ESTE EVENTO'}</button></form></section>
 
-  <section className="panel p-5 sm:p-7"><div className="flex items-end justify-between gap-3"><div><p className="eyebrow">Actividad</p><h2 className="display-title mt-2 text-3xl">LISTA COMPLETA</h2></div><span className="font-display text-2xl text-muted">{selectedEvent.invitados_recientes.length}</span></div>{selectedEvent.invitados_recientes.length > 0 ? <div className="mt-5 divide-y divide-gray-200 border-y border-gray-200 dark:divide-white/10 dark:border-white/10">{selectedEvent.invitados_recientes.map((guest, guestIndex) => <button type="button" key={guest.id || `${guest.dni || 'guest'}-${guestIndex}`} onClick={() => setSelectedGuest(guest)} className="flex w-full items-center gap-3 py-4 text-left transition hover:bg-gray-50 dark:hover:bg-white/5"><div className="grid size-10 shrink-0 place-items-center border border-gray-200 font-display text-sm text-gray-500 dark:border-white/15 dark:text-muted">{(guest.nombre?.[0] || '?')}{guest.apellido?.[0] || ''}</div><div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold text-gray-900 dark:text-paper-text">{[guest.nombre, guest.apellido].filter(Boolean).join(' ') || 'Invitado'}</p><p className="mt-1 font-mono text-[9px] uppercase text-gray-500 dark:text-muted">{guest.dni ? `DNI ${guest.dni}` : 'DNI no informado'}{guest.instagram ? ` · @${guest.instagram}` : ''}</p></div>{guest.estado && <span className={`max-w-24 truncate border px-2 py-1 font-mono text-[8px] uppercase ${guest.estado === 'pendiente' ? 'border-amber-300 text-amber-300' : 'border-gray-200 text-gray-500 dark:border-white/15 dark:text-muted'}`}>{String(guest.estado).replaceAll('_', ' ')}</span>}</button>)}</div> : <div className="mt-5 border border-dashed border-gray-200 p-6 text-center dark:border-white/15"><Icon name="users" className="mx-auto text-gray-400 dark:text-muted"/><p className="mt-3 text-xs leading-5 text-gray-500 dark:text-muted">No se informaron invitados recientes para este evento.</p></div>}</section></div>
+  <section className="panel p-5 sm:p-7"><div className="flex items-end justify-between gap-3"><div><p className="eyebrow">Actividad</p><h2 className="display-title mt-2 text-3xl">LISTA COMPLETA</h2></div><span className="font-display text-2xl text-muted">{selectedEvent.invitados_recientes.length}</span></div><div className="mt-5 flex flex-wrap gap-2">{GUEST_FILTERS.map((f) => <button key={f.key} type="button" onClick={() => setGuestFilter(f.key)} className={`min-h-9 border px-3 font-mono text-[9px] font-bold uppercase tracking-wider transition ${guestFilter === f.key ? 'border-strobe bg-strobe/10 text-strobe' : 'border-gray-200 text-gray-500 hover:border-gray-300 dark:border-white/15 dark:text-muted'}`}>{f.label}</button>)}</div><div className="relative mt-3"><Icon name="search" size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-muted"/><input value={guestSearch} onChange={(e) => setGuestSearch(e.target.value)} className="field pl-9" placeholder="Buscar por nombre o DNI..." aria-label="Buscar invitado"/></div>{filteredGuests.length > 0 ? <div className="mt-5 max-h-[520px] overflow-y-auto divide-y divide-gray-200 border-y border-gray-200 dark:divide-white/10 dark:border-white/10">{filteredGuests.map((guest, guestIndex) => <button type="button" key={guest.id || `${guest.dni || 'guest'}-${guestIndex}`} onClick={() => setSelectedGuest(guest)} className="flex w-full items-center gap-3 py-4 text-left transition hover:bg-gray-50 dark:hover:bg-white/5"><div className="grid size-10 shrink-0 place-items-center border border-gray-200 font-display text-sm text-gray-500 dark:border-white/15 dark:text-muted">{(guest.nombre?.[0] || '?')}{guest.apellido?.[0] || ''}</div><div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold text-gray-900 dark:text-paper-text">{[guest.nombre, guest.apellido].filter(Boolean).join(' ') || 'Invitado'}</p><p className="mt-1 font-mono text-[9px] uppercase text-gray-500 dark:text-muted">{guest.dni ? `DNI ${guest.dni}` : 'DNI no informado'}{guest.instagram ? ` · @${guest.instagram}` : ''}</p></div>{guest.estado && <span className={`max-w-24 truncate border px-2 py-1 font-mono text-[8px] uppercase ${guest.estado === 'pendiente' ? 'border-amber-300 text-amber-300' : 'border-gray-200 text-gray-500 dark:border-white/15 dark:text-muted'}`}>{String(guest.estado).replaceAll('_', ' ')}</span>}</button>)}</div> : <div className="mt-5 border border-dashed border-gray-200 p-6 text-center dark:border-white/15"><Icon name="users" className="mx-auto text-gray-400 dark:text-muted"/><p className="mt-3 text-xs leading-5 text-gray-500 dark:text-muted">{selectedEvent.invitados_recientes.length === 0 ? 'No se informaron invitados para este evento.' : 'Ningún invitado coincide con el filtro o la búsqueda.'}</p></div>}</section></div>
   </div>}</div>}
   </div>
   <GuestApprovalModal
