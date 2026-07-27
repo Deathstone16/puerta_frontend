@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
 import Modal from './Modal'
 import { api } from '../lib/api'
+import { filterName } from '../lib/inputFilters'
+
+const FIELD_FILTERS = { nombre: filterName, apellido: filterName }
 
 const EMPTY_FORM = { nombre: '', apellido: '', username: '', password: '', rol: 'rrpp' }
 
@@ -11,7 +14,11 @@ export default function PersonalFormModal({ open, onClose, onSuccess }) {
 
   useEffect(() => { if (open) { setForm(EMPTY_FORM); setApiError('') } }, [open])
 
-  const updateField = (field) => (e) => { setForm((p) => ({ ...p, [field]: e.target.value })); setApiError('') }
+  const updateField = (field) => (e) => {
+    const f = FIELD_FILTERS[field]
+    const value = f ? f(e.target.value) : e.target.value
+    setForm((p) => ({ ...p, [field]: value })); setApiError('')
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
