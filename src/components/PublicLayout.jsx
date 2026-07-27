@@ -1,18 +1,9 @@
-import { useState } from 'react'
-import { Link, Outlet, useNavigate } from 'react-router-dom'
-import Icon from './Icons'
+import { Link, Outlet } from 'react-router-dom'
 import PuertaLogo from './PuertaLogo'
 import { useTheme } from '../context/ThemeContext'
 
 export default function PublicLayout() {
-  const [query, setQuery] = useState('')
-  const navigate = useNavigate()
   const { isDark, toggleTheme } = useTheme()
-
-  const submitSearch = (event) => {
-    event.preventDefault()
-    navigate(`/?q=${encodeURIComponent(query)}`)
-  }
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-white dark:bg-void">
@@ -21,11 +12,8 @@ export default function PublicLayout() {
           <Link to="/" aria-label="Puerta inicio">
             <PuertaLogo size={28} />
           </Link>
-          <form onSubmit={submitSearch} className="relative ml-auto hidden w-full max-w-sm md:block">
-            <Icon name="search" size={17} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-muted" />
-            <input value={query} onChange={(event) => setQuery(event.target.value)} className="field min-h-10 pl-10 text-xs" placeholder="BUSCAR FIESTA, CLUB, CIUDAD..." aria-label="Buscar eventos" />
-          </form>
-          <button onClick={toggleTheme} className="ml-auto grid size-10 shrink-0 place-items-center border border-gray-200 text-gray-500 transition hover:border-strobe hover:text-strobe md:ml-0 dark:border-white/15 dark:text-muted" aria-label={isDark ? 'Modo claro' : 'Modo oscuro'}>
+          {/* #15: en el navbar del cliente solo queda el toggle de tema. */}
+          <button onClick={toggleTheme} className="ml-auto grid size-10 shrink-0 place-items-center border border-gray-200 text-gray-500 transition hover:border-strobe hover:text-strobe dark:border-white/15 dark:text-muted" aria-label={isDark ? 'Modo claro' : 'Modo oscuro'}>
             {isDark ? '☀️' : '🌙'}
           </button>
         </div>
