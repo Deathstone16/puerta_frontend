@@ -123,6 +123,7 @@ export default function DashboardPage() {
   // Al volver del OAuth de Mercado Pago, el backend redirige a /dashboard?mp_connected=true.
   // Refrescamos el estado del boliche, mostramos un mensaje de éxito y limpiamos la URL.
   const [mpSuccess, setMpSuccess] = useState(false)
+  const [mpErrorMsg, setMpErrorMsg] = useState('')
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     if (params.get('mp_connected') === 'true') {
@@ -131,6 +132,10 @@ export default function DashboardPage() {
       window.history.replaceState({}, '', window.location.pathname)
       const t = window.setTimeout(() => setMpSuccess(false), 6000)
       return () => window.clearTimeout(t)
+    }
+    if (params.get('mp_error') === 'true') {
+      setMpErrorMsg('No se pudo conectar Mercado Pago. Revisá la configuración e intentá de nuevo.')
+      window.history.replaceState({}, '', window.location.pathname)
     }
     return undefined
   }, [refreshBoliche])
@@ -185,6 +190,11 @@ export default function DashboardPage() {
           {mpSuccess && (
             <div className="flex items-center gap-2 border border-emerald-400/60 bg-emerald-400/10 px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-300" role="status">
               <Icon name="check" size={14} /> Mercado Pago conectado
+            </div>
+          )}
+          {mpErrorMsg && (
+            <div className="flex items-center gap-2 border border-door-red/60 bg-door-red/10 px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-wider text-door-red" role="alert">
+              <Icon name="close" size={14} /> {mpErrorMsg}
             </div>
           )}
           {/* Aforo badge */}
