@@ -48,7 +48,7 @@ function ListForm({ event, listaSlug, onClose }) {
 
   return (
     <form onSubmit={submit}>
-      <p className="eyebrow mb-3">{event.nombre} · {event.fechaCorta}</p>
+      <p className="eyebrow mb-3">{event.nombre} · {event.fecha_corta}</p>
       <h2 className="display-title pr-8 text-4xl sm:text-5xl">SUMARME A LA LISTA</h2>
       <p className="mt-3 text-sm text-muted">{event.club}, {event.ciudad}. Completá tus datos tal como figuran en tu documento.</p>
       <div className="mt-7 grid gap-3 sm:grid-cols-2">

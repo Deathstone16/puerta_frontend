@@ -51,7 +51,7 @@ export default function ListPage() {
     return (
       <section className="grid min-h-[calc(100vh-64px)] place-items-center px-4 py-12">
         <div className="w-full max-w-xl border-2 border-strobe bg-[var(--color-surface)] p-6 shadow-[10px_10px_0_#8B5CF6] sm:p-10">
-          <p className="eyebrow mb-3">{event.nombre} · {event.fechaCorta}</p>
+          <p className="eyebrow mb-3">{event.nombre} · {event.fecha_corta}</p>
           <h1 className="display-title text-4xl sm:text-5xl">{event.nombre}</h1>
           <p className="mt-4 text-sm text-[var(--color-text-muted)]">
             {event.club} · Lista de {data.rrpp_nombre}
@@ -119,7 +119,7 @@ export default function ListPage() {
             <button type="button" onClick={() => setMode(null)} className="mb-4 flex items-center gap-2 font-mono text-[10px] uppercase text-[var(--color-text-muted)] hover:text-strobe">
               <Icon name="back" size={14} /> Volver
             </button>
-            <p className="eyebrow mb-3">{event.nombre} · {event.fechaCorta}</p>
+            <p className="eyebrow mb-3">{event.nombre} · {event.fecha_corta}</p>
             <h1 className="display-title text-4xl sm:text-5xl">SUMARME<br />A LA LISTA</h1>
             <p className="mt-4 text-sm text-[var(--color-text-muted)]">
               Lista de {data.rrpp_nombre}. Ya hay {data.anotados} personas anotadas.
