@@ -120,6 +120,21 @@ export default function DashboardPage() {
     } catch { setBoliche(null) }
   }, [])
 
+  // Al volver del OAuth de Mercado Pago, el backend redirige a /dashboard?mp_connected=true.
+  // Refrescamos el estado del boliche, mostramos un mensaje de éxito y limpiamos la URL.
+  const [mpSuccess, setMpSuccess] = useState(false)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('mp_connected') === 'true') {
+      setMpSuccess(true)
+      refreshBoliche()
+      window.history.replaceState({}, '', window.location.pathname)
+      const t = window.setTimeout(() => setMpSuccess(false), 6000)
+      return () => window.clearTimeout(t)
+    }
+    return undefined
+  }, [refreshBoliche])
+
   // Modal helpers
   const openModal = (type, data = null) => setModalState({ type, data })
   const closeModal = () => setModalState({ type: null, data: null })
@@ -167,6 +182,11 @@ export default function DashboardPage() {
             mpConnected={boliche?.mp_connected ?? false}
             onDisconnect={refreshBoliche}
           />
+          {mpSuccess && (
+            <div className="flex items-center gap-2 border border-emerald-400/60 bg-emerald-400/10 px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-300" role="status">
+              <Icon name="check" size={14} /> Mercado Pago conectado
+            </div>
+          )}
           {/* Aforo badge */}
           {aforo && (
             <div className="flex items-center gap-2 border border-strobe/60 bg-strobe/10 px-3 py-2">
