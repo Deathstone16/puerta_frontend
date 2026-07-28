@@ -27,6 +27,7 @@ function normalizeGuest(guest) {
     dni: String(firstDefined(guest.dni, guest.documento, guest.document_number, '')).trim(),
     instagram: String(firstDefined(guest.instagram, '')).trim(),
     estado: firstDefined(guest.estado, guest.status, null),
+    aprobado_rrpp: Boolean(guest.aprobado_rrpp),
     creado_en: firstDefined(guest.creado_en, guest.created_at, guest.fecha_alta, null),
   }
 }
@@ -137,13 +138,28 @@ const GUEST_FILTERS = [
   { key: 'rechazado', label: 'Rechazados' },
 ]
 
-function matchEstadoFiltro(estado, filtro) {
+// Estado efectivo del invitado combinando `estado` (flujo de puerta) con
+// `aprobado_rrpp` (el RRPP ya lo validó, aunque el guardia todavía no).
+function guestEstado(guest) {
+  const e = String(guest?.estado || '').toLowerCase()
+  if (e === 'ingresado_final') return 'ingresado'
+  if (e.includes('rebotado') || e.includes('rechazad')) return 'rechazado'
+  if (e.includes('aprobado') || guest?.aprobado_rrpp) return 'aprobado'
+  return 'pendiente'
+}
+
+const GUEST_ESTADO_UI = {
+  pendiente: { label: 'Pendiente', cls: 'border-amber-300 text-amber-300' },
+  aprobado: { label: 'Aprobado', cls: 'border-emerald-400 text-emerald-500 dark:text-emerald-300' },
+  ingresado: { label: 'Ingresó', cls: 'border-strobe text-strobe' },
+  rechazado: { label: 'Rechazado', cls: 'border-door-red text-door-red' },
+}
+
+function matchEstadoFiltro(guest, filtro) {
   if (filtro === 'todos') return true
-  const e = String(estado || '').toLowerCase()
-  if (filtro === 'pendiente') return e === 'pendiente' || e === ''
-  if (filtro === 'aprobado') return e.includes('aprobado') || e === 'ingresado_final'
-  if (filtro === 'rechazado') return e.includes('rebotado') || e.includes('rechazad')
-  return true
+  const est = guestEstado(guest)
+  if (filtro === 'aprobado') return est === 'aprobado' || est === 'ingresado'
+  return est === filtro
 }
 
 function EventOption({ event, selected, onSelect }) {
@@ -215,7 +231,7 @@ export default function RrppPage() {
     const all = selectedEvent?.invitados_recientes || []
     const q = guestSearch.trim().toLowerCase()
     return all.filter((g) =>
-      matchEstadoFiltro(g.estado, guestFilter)
+      matchEstadoFiltro(g, guestFilter)
       && (q === ''
         || `${g.nombre || ''} ${g.apellido || ''}`.toLowerCase().includes(q)
         || String(g.dni || '').includes(q)),
@@ -338,7 +354,7 @@ export default function RrppPage() {
     } catch { /* fallback */ }
     setEvents((current) => current.map((ev) => ev._key !== selectedEvent?._key ? ev : {
       ...ev,
-      invitados_recientes: ev.invitados_recientes.map((g) => g.id === guestId ? { ...g, estado: 'aprobado' } : g),
+      invitados_recientes: ev.invitados_recientes.map((g) => g.id === guestId ? { ...g, aprobado_rrpp: true } : g),
     }))
     setSelectedGuest(null)
     setFeedback({ type: 'success', message: 'Invitado aprobado en la lista.' })
@@ -405,7 +421,7 @@ export default function RrppPage() {
 
   <div className="mt-5 space-y-5"><section className="panel p-5 sm:p-7"><p className="eyebrow">Alta manual</p><h2 className="display-title mt-2 text-3xl">ANOTAR INVITADO</h2><p className="mt-3 text-sm text-gray-500 dark:text-muted">Se agregará a <strong className="text-gray-900 dark:text-paper-text">{selectedEvent.nombre}</strong>.</p><form onSubmit={submitGuest} className="mt-6 grid gap-3 sm:grid-cols-2"><label className="block"><span className="mb-2 block font-mono text-[9px] font-bold uppercase tracking-wider text-muted">Nombre</span><input required maxLength={80} autoComplete="given-name" className="field" value={form.nombre} onChange={updateForm('nombre')} placeholder="NOMBRE"/></label><label className="block"><span className="mb-2 block font-mono text-[9px] font-bold uppercase tracking-wider text-muted">Apellido</span><input required maxLength={80} autoComplete="family-name" className="field" value={form.apellido} onChange={updateForm('apellido')} placeholder="APELLIDO"/></label><label className="block sm:col-span-2"><span className="mb-2 block font-mono text-[9px] font-bold uppercase tracking-wider text-muted">DNI</span><input required inputMode="numeric" autoComplete="off" pattern="[0-9]{7,8}" minLength={7} maxLength={8} className="field" value={form.dni} onChange={updateForm('dni')} placeholder="DNI SIN PUNTOS"/></label>{formError && <p className="border border-door-red/50 bg-door-red/10 p-3 text-sm text-door-red sm:col-span-2" role="alert">{formError}</p>}<button disabled={busy || (selectedEvent.cupo_max != null && selectedEvent.anotados != null && selectedEvent.anotados >= selectedEvent.cupo_max)} className="btn-primary mt-1 w-full sm:col-span-2">{busy ? 'ANOTANDO...' : 'ANOTAR EN ESTE EVENTO'}</button></form></section>
 
-  <section className="panel p-5 sm:p-7"><div className="flex items-end justify-between gap-3"><div><p className="eyebrow">Actividad</p><h2 className="display-title mt-2 text-3xl">LISTA COMPLETA</h2></div><span className="font-display text-2xl text-muted">{selectedEvent.invitados_recientes.length}</span></div><div className="mt-5 flex flex-wrap gap-2">{GUEST_FILTERS.map((f) => <button key={f.key} type="button" onClick={() => setGuestFilter(f.key)} className={`min-h-9 border px-3 font-mono text-[9px] font-bold uppercase tracking-wider transition ${guestFilter === f.key ? 'border-strobe bg-strobe/10 text-strobe' : 'border-gray-200 text-gray-500 hover:border-gray-300 dark:border-white/15 dark:text-muted'}`}>{f.label}</button>)}</div><div className="relative mt-3"><Icon name="search" size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-muted"/><input value={guestSearch} onChange={(e) => setGuestSearch(e.target.value)} className="field pl-9" placeholder="Buscar por nombre o DNI..." aria-label="Buscar invitado"/></div>{filteredGuests.length > 0 ? <div className="mt-5 max-h-[520px] overflow-y-auto divide-y divide-gray-200 border-y border-gray-200 dark:divide-white/10 dark:border-white/10">{filteredGuests.map((guest, guestIndex) => <button type="button" key={guest.id || `${guest.dni || 'guest'}-${guestIndex}`} onClick={() => setSelectedGuest(guest)} className="flex w-full items-center gap-3 py-4 text-left transition hover:bg-gray-50 dark:hover:bg-white/5"><div className="grid size-10 shrink-0 place-items-center border border-gray-200 font-display text-sm text-gray-500 dark:border-white/15 dark:text-muted">{(guest.nombre?.[0] || '?')}{guest.apellido?.[0] || ''}</div><div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold text-gray-900 dark:text-paper-text">{[guest.nombre, guest.apellido].filter(Boolean).join(' ') || 'Invitado'}</p><p className="mt-1 font-mono text-[9px] uppercase text-gray-500 dark:text-muted">{guest.dni ? `DNI ${guest.dni}` : 'DNI no informado'}{guest.instagram ? ` · @${guest.instagram}` : ''}</p></div>{guest.estado && <span className={`max-w-24 truncate border px-2 py-1 font-mono text-[8px] uppercase ${guest.estado === 'pendiente' ? 'border-amber-300 text-amber-300' : 'border-gray-200 text-gray-500 dark:border-white/15 dark:text-muted'}`}>{String(guest.estado).replaceAll('_', ' ')}</span>}</button>)}</div> : <div className="mt-5 border border-dashed border-gray-200 p-6 text-center dark:border-white/15"><Icon name="users" className="mx-auto text-gray-400 dark:text-muted"/><p className="mt-3 text-xs leading-5 text-gray-500 dark:text-muted">{selectedEvent.invitados_recientes.length === 0 ? 'No se informaron invitados para este evento.' : 'Ningún invitado coincide con el filtro o la búsqueda.'}</p></div>}</section></div>
+  <section className="panel p-5 sm:p-7"><div className="flex items-end justify-between gap-3"><div><p className="eyebrow">Actividad</p><h2 className="display-title mt-2 text-3xl">LISTA COMPLETA</h2></div><span className="font-display text-2xl text-muted">{selectedEvent.invitados_recientes.length}</span></div><div className="mt-5 flex flex-wrap gap-2">{GUEST_FILTERS.map((f) => <button key={f.key} type="button" onClick={() => setGuestFilter(f.key)} className={`min-h-9 border px-3 font-mono text-[9px] font-bold uppercase tracking-wider transition ${guestFilter === f.key ? 'border-strobe bg-strobe/10 text-strobe' : 'border-gray-200 text-gray-500 hover:border-gray-300 dark:border-white/15 dark:text-muted'}`}>{f.label}</button>)}</div><div className="relative mt-3"><Icon name="search" size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-muted"/><input value={guestSearch} onChange={(e) => setGuestSearch(e.target.value)} className="field pl-9" placeholder="Buscar por nombre o DNI..." aria-label="Buscar invitado"/></div>{filteredGuests.length > 0 ? <div className="mt-5 max-h-[520px] overflow-y-auto divide-y divide-gray-200 border-y border-gray-200 dark:divide-white/10 dark:border-white/10">{filteredGuests.map((guest, guestIndex) => <button type="button" key={guest.id || `${guest.dni || 'guest'}-${guestIndex}`} onClick={() => setSelectedGuest(guest)} className="flex w-full items-center gap-3 py-4 text-left transition hover:bg-gray-50 dark:hover:bg-white/5"><div className="grid size-10 shrink-0 place-items-center border border-gray-200 font-display text-sm text-gray-500 dark:border-white/15 dark:text-muted">{(guest.nombre?.[0] || '?')}{guest.apellido?.[0] || ''}</div><div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold text-gray-900 dark:text-paper-text">{[guest.nombre, guest.apellido].filter(Boolean).join(' ') || 'Invitado'}</p><p className="mt-1 font-mono text-[9px] uppercase text-gray-500 dark:text-muted">{guest.dni ? `DNI ${guest.dni}` : 'DNI no informado'}{guest.instagram ? ` · @${guest.instagram}` : ''}</p></div><span className={`max-w-24 truncate border px-2 py-1 font-mono text-[8px] uppercase ${GUEST_ESTADO_UI[guestEstado(guest)].cls}`}>{GUEST_ESTADO_UI[guestEstado(guest)].label}</span></button>)}</div> : <div className="mt-5 border border-dashed border-gray-200 p-6 text-center dark:border-white/15"><Icon name="users" className="mx-auto text-gray-400 dark:text-muted"/><p className="mt-3 text-xs leading-5 text-gray-500 dark:text-muted">{selectedEvent.invitados_recientes.length === 0 ? 'No se informaron invitados para este evento.' : 'Ningún invitado coincide con el filtro o la búsqueda.'}</p></div>}</section></div>
   </div>}</div>}
   </div>
   <GuestApprovalModal
