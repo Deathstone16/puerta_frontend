@@ -70,8 +70,6 @@ export default function EventDetailPage() {
   // ?ref=<slug del link del RRPP> — mantiene la atribución durante todo el flujo de compra
   const ref = searchParams.get('ref')
   const [event, setEvent] = useState(null)
-  const [priceType, setPriceType] = useState('anticipada')
-  const [combo, setCombo] = useState('entrada')
   const [modalOpen, setModalOpen] = useState(false)
 
   useEffect(() => {
@@ -81,8 +79,6 @@ export default function EventDetailPage() {
   }, [id])
 
   if (!event) return <section className="min-h-[540px] grid place-items-center"><p className="text-muted">Cargando evento...</p></section>
-
-  const base = (event.precio_publicado || 0) + (priceType === 'puerta' ? 800 : 0) + (combo === 'tragos' ? 2500 : 0)
 
   return (
     <>
@@ -102,11 +98,9 @@ export default function EventDetailPage() {
           <div className="mt-12 grid gap-3 sm:grid-cols-3">{[['pin','CLUB',`${event.club || '—'} · ${event.ciudad || '—'}`],['clock','HORARIO',`${event.horario || '—'} — 06:00`],['shield','INGRESO','DNI físico · +18']].map(([icon,label,value]) => <div className="panel p-4" key={label}><Icon name={icon} className="mb-5 text-uv"/><p className="eyebrow">{label}</p><p className="mt-2 text-sm font-semibold">{value}</p></div>)}</div>
         </div>
         <aside className="h-fit border border-white/15 bg-floor p-5 lg:sticky lg:top-24">
-          <p className="eyebrow mb-2">Elegí tu acceso</p><h2 className="display-title text-3xl">PRECIO POR FRANJA HORARIA</h2>
-          <div className="mt-5 grid gap-2">{[['anticipada','ANTICIPADA',event.precio_publicado],['puerta','EN PUERTA',event.precio_publicado + 800]].map(([value,label,price]) => <label key={value} className={`flex cursor-pointer items-center justify-between border p-4 transition ${priceType === value ? 'border-uv bg-uv/10' : 'border-white/15 hover:border-white/30'}`}><span className="flex items-center gap-3"><input type="radio" name="price" checked={priceType === value} onChange={() => setPriceType(value)} className="accent-violet-500"/><span className="font-mono text-xs font-bold">{label}</span></span><span className="font-mono text-sm font-bold text-strobe">{formatMoney(price)}</span></label>)}</div>
-          <h3 className="mt-7 font-mono text-[10px] font-bold uppercase tracking-[.18em] text-muted">Elegí tu combo</h3>
-          <div className="mt-3 grid gap-2">{[['entrada','SOLO ENTRADA',0],['tragos','ENTRADA + 2 TRAGOS',2500]].map(([value,label,extra]) => <label key={value} className={`flex cursor-pointer items-center justify-between border p-4 transition ${combo === value ? 'border-strobe bg-strobe/5' : 'border-white/15 hover:border-white/30'}`}><span className="flex items-center gap-3"><input type="radio" name="combo" checked={combo === value} onChange={() => setCombo(value)} className="accent-cyan-400"/><span className="font-mono text-xs font-bold">{label}</span></span><span className="font-mono text-xs text-muted">{extra ? `+${formatMoney(extra)}` : 'INCLUIDO'}</span></label>)}</div>
-          <Link to={`/checkout/${event.id}${ref ? `?ref=${ref}` : ''}`} state={{ priceType, combo, total: base }} className="btn-primary mt-5 w-full">COMPRAR COMBO — {formatMoney(base)} <Icon name="arrow" size={17}/></Link>
+          <p className="eyebrow mb-2">Entrada anticipada</p><h2 className="display-title text-3xl">COMPRA WEB</h2>
+          <div className="mt-5 flex items-center justify-between border border-white/15 bg-void/40 p-4"><span className="font-mono text-xs font-bold uppercase tracking-wider">ANTICIPADA</span><span className="font-mono text-sm font-bold text-strobe">{formatMoney(event.precio_publicado)}</span></div>
+          <Link to={`/checkout/${event.id}${ref ? `?ref=${ref}` : ''}`} className="btn-primary mt-5 w-full">COMPRAR ENTRADA — {formatMoney(event.precio_publicado)} <Icon name="arrow" size={17}/></Link>
           <button onClick={() => setModalOpen(true)} className={`btn-secondary mt-3 w-full${(event.habilitar_lista === false || !(ref || event.lista_slug)) ? ' hidden' : ''}`}>SUMARME A LA LISTA</button>
         </aside>
       </div></section>

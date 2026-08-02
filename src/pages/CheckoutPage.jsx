@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import Icon from '../components/Icons'
 import { usePurchase } from '../context/PurchaseContext'
 import { formatMoney } from '../lib/format'
@@ -10,7 +10,6 @@ const FILTERS = { nombre: filterName, apellido: filterName, dni: filterDni }
 
 export default function CheckoutPage() {
   const { id } = useParams()
-  const location = useLocation()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   // ?ref=<slug> del link RRPP para atribuir la venta
@@ -20,7 +19,6 @@ export default function CheckoutPage() {
   const [buyer, setBuyer] = useState({ nombre: '', apellido: '', dni: '', email: '' })
   const [status, setStatus] = useState('idle')
   const [error, setError] = useState('')
-  const choice = location.state || { priceType: 'anticipada', combo: 'entrada' }
 
   useEffect(() => { api.get(`/eventos/${id}/`).then((data) => setEvent(data)).catch(() => {}) }, [id])
   // El total se muestra y se cobra SIEMPRE con el precio publicado por el backend
@@ -45,10 +43,10 @@ export default function CheckoutPage() {
   const pay = async (e) => {
     e.preventDefault()
     setStatus('loading'); setError('')
-    const purchase = { event, buyer, choice, amounts }
+    const purchase = { event, buyer, amounts }
     setSelection(purchase)
     try {
-      const data = await api.post('/pagos/preferencia/', { evento_id: event.id, ...buyer, price_type: choice.priceType, combo: choice.combo, link_slug: ref || undefined })
+      const data = await api.post('/pagos/preferencia/', { evento_id: event.id, ...buyer, link_slug: ref || undefined })
       if (data?.init_point) window.location.assign(data.init_point)
       else navigate('/procesando', { state: { token: data?.token } })
     } catch (apiError) {
