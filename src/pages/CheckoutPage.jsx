@@ -23,14 +23,17 @@ export default function CheckoutPage() {
   const choice = location.state || { priceType: 'anticipada', combo: 'entrada' }
 
   useEffect(() => { api.get(`/eventos/${id}/`).then((data) => setEvent(data)).catch(() => {}) }, [id])
+  // El total se muestra y se cobra SIEMPRE con el precio publicado por el backend
+  // (lo mismo que paga Mercado Pago: precio_base + fee MP + fee Norware). El
+  // desglose replica calcular_precio_publicado para que las líneas sumen exacto.
   const amounts = useMemo(() => {
-    if (!event) return { ticket: 0, drink: 0, mp: 0, service: 0, total: 0 }
-    const ticket = event.precio_base || Math.round((event.precio_publicado || 0) * .82)
-    const drink = choice.combo === 'tragos' ? 2500 : 0
-    const mp = Math.round(ticket * .05)
-    const service = Math.max(250, (event.precio_publicado || 0) - ticket) + drink
-    return { ticket, drink, mp, service, total: ticket + service + mp }
-  }, [event, choice.combo])
+    if (!event) return { base: 0, feeMp: 0, feeNorware: 0, total: 0 }
+    const base = Number(event.precio_base || 0)
+    const total = Number(event.precio_publicado || Math.round(base * 1.14))
+    const feeMp = Math.round(base * 0.0599 * 100) / 100
+    const feeNorware = Math.round((total - base - feeMp) * 100) / 100
+    return { base, feeMp, feeNorware, total }
+  }, [event])
   const update = (key) => (e) => {
     const filter = FILTERS[key]
     const value = filter ? filter(e.target.value) : e.target.value
@@ -67,7 +70,7 @@ export default function CheckoutPage() {
         </form>
         <aside className="order-1 h-fit border-2 border-amber-300 bg-floor p-5 text-paper-text lg:order-2">
           <div className="border-b border-dashed border-white/25 pb-5"><p className="eyebrow text-amber-300">Tu noche</p><h2 className="display-title mt-2 text-3xl">{event.nombre}</h2><p className="mt-3 text-xs text-muted">{event.club || '—'} · {event.ciudad || '—'}<br/>{event.fecha_corta || '—'} · {event.horario || '—'} HS</p></div>
-          <div className="space-y-3 border-b border-dashed border-white/25 py-5 font-mono text-xs"><p className="flex justify-between"><span className="text-muted">ENTRADA</span><span>{formatMoney(amounts.ticket)}</span></p>{amounts.drink > 0 && <p className="flex justify-between"><span className="text-muted">COMBO 2 TRAGOS</span><span>{formatMoney(amounts.drink)}</span></p>}<p className="flex justify-between"><span className="text-muted">SERVICIO NORWARE</span><span>{formatMoney(amounts.service)}</span></p><p className="flex justify-between"><span className="text-muted">MERCADO PAGO</span><span>{formatMoney(amounts.mp)}</span></p></div>
+          <div className="space-y-3 border-b border-dashed border-white/25 py-5 font-mono text-xs"><p className="flex justify-between"><span className="text-muted">ENTRADA</span><span>{formatMoney(amounts.base)}</span></p><p className="flex justify-between"><span className="text-muted">SERVICIO NORWARE</span><span>{formatMoney(amounts.feeNorware)}</span></p><p className="flex justify-between"><span className="text-muted">MERCADO PAGO</span><span>{formatMoney(amounts.feeMp)}</span></p></div>
           <div className="flex items-end justify-between pt-5"><span className="font-mono text-xs font-bold">TOTAL</span><strong className="font-mono text-3xl text-strobe">{formatMoney(amounts.total)}</strong></div>
         </aside>
       </div>
