@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import ConfirmDialog from '../components/ConfirmDialog'
 import Icon from '../components/Icons'
 import OrganizadorFormModal from '../components/OrganizadorFormModal'
 import { useAuth } from '../context/AuthContext'
@@ -25,32 +26,53 @@ function useAdminMetrics() {
 function useOrganizadores() {
   const [organizadores, setOrganizadores] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
   const fetchOrganizadores = () => {
     setLoading(true)
+    setError(null)
     api.get('/admin/organizadores/')
       .then((data) => setOrganizadores(data))
-      .catch(() => setOrganizadores([]))
+      .catch((err) => {
+        setOrganizadores([])
+        setError(err?.status === 401 ? 'Sesión expirada. Recargá la página.' : 'Error al cargar organizadores.')
+      })
       .finally(() => setLoading(false))
   }
 
   useEffect(() => { fetchOrganizadores() }, [])
 
-  return { organizadores, loading, refetch: fetchOrganizadores }
+  return { organizadores, loading, error, refetch: fetchOrganizadores }
 }
 
 export default function AdminPage() {
   const { session, logout } = useAuth()
   const { isDark, toggleTheme } = useTheme()
   const { data, loading } = useAdminMetrics()
-  const { organizadores, loading: loadingOrgs, refetch } = useOrganizadores()
+  const { organizadores, loading: loadingOrgs, error: orgsError, refetch } = useOrganizadores()
   const [showModal, setShowModal] = useState(false)
   const [tab, setTab] = useState('metricas')
+  const [deactivateTarget, setDeactivateTarget] = useState(null)
 
-  const handleDeactivate = async (id, nombre) => {
-    if (!window.confirm(`¿Desactivar al organizador "${nombre}"?`)) return
+  const handleDeactivate = (id, nombre) => {
+    setDeactivateTarget({ id, nombre })
+  }
+
+  const confirmDeactivate = async () => {
+    const { id } = deactivateTarget
+    setDeactivateTarget(null)
     try {
       await apiRequest(`/admin/organizadores/${id}/`, { method: 'DELETE' })
+      refetch()
+    } catch {
+      // silently fail
+    }
+  }
+
+  const handleReactivate = async (id, nombre) => {
+    if (!window.confirm(`¿Reactivar al organizador "${nombre}"?`)) return
+    try {
+      await api.patch(`/admin/organizadores/${id}/`, { is_active: true })
       refetch()
     } catch {
       // silently fail
@@ -113,7 +135,13 @@ export default function AdminPage() {
                   <p className="mt-5 font-mono text-[10px] uppercase tracking-widest text-gray-500 dark:text-muted">Cargando métricas</p>
                 </div>
               </div>
-            ) : data && (
+            ) : !data ? (
+              <div className="panel grid min-h-48 place-items-center p-8 text-center">
+                <Icon name="calendar" size={38} className="mx-auto text-gray-400 dark:text-muted" />
+                <p className="display-title mt-5 text-2xl">SIN MÉTRICAS</p>
+                <p className="mt-3 text-sm text-gray-500 dark:text-muted">No hay datos disponibles aún.</p>
+              </div>
+            ) : (
               <>
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" data-testid="admin-kpi-grid">
                   <div className="panel p-5" data-testid="kpi-card">
@@ -190,6 +218,15 @@ export default function AdminPage() {
               <div className="grid min-h-40 place-items-center">
                 <div className="mx-auto size-8 animate-spin border-2 border-gray-200 border-t-strobe dark:border-white/10" />
               </div>
+            ) : orgsError ? (
+              <div className="panel grid min-h-40 place-items-center p-8" data-testid="organizadores-error">
+                <div className="text-center">
+                  <p className="font-mono text-sm text-door-red">{orgsError}</p>
+                  <button onClick={refetch} className="mt-4 border border-strobe/50 px-3 py-1.5 font-mono text-[9px] font-bold uppercase text-strobe transition hover:bg-strobe/10">
+                    Reintentar
+                  </button>
+                </div>
+              </div>
             ) : organizadores.length === 0 ? (
               <div className="panel grid min-h-40 place-items-center p-8">
                 <div className="text-center">
@@ -224,13 +261,21 @@ export default function AdminPage() {
                             </span>
                           </td>
                           <td className="p-3 text-right">
-                            {org.is_active && (
+                            {org.is_active ? (
                               <button
                                 onClick={() => handleDeactivate(org.id, org.nombre)}
                                 className="border border-door-red/50 px-2 py-1 font-mono text-[9px] font-bold uppercase text-door-red transition hover:bg-door-red/10"
                                 data-testid="btn-desactivar"
                               >
                                 Desactivar
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => handleReactivate(org.id, org.nombre)}
+                                className="border border-strobe/50 px-2 py-1 font-mono text-[9px] font-bold uppercase text-strobe transition hover:bg-strobe/10"
+                                data-testid="btn-reactivar"
+                              >
+                                Reactivar
                               </button>
                             )}
                           </td>
@@ -250,6 +295,16 @@ export default function AdminPage() {
           </section>
         )}
       </main>
+      <ConfirmDialog
+        open={Boolean(deactivateTarget)}
+        title="Desactivar organizador"
+        message={`¿Desactivar al organizador "${deactivateTarget?.nombre || ''}"?`}
+        confirmText="Desactivar"
+        cancelText="Cancelar"
+        destructive
+        onConfirm={confirmDeactivate}
+        onCancel={() => setDeactivateTarget(null)}
+      />
     </div>
   )
 }

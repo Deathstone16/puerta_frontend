@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
 import Modal from './Modal'
 import { api } from '../lib/api'
+import { filterName } from '../lib/inputFilters'
+
+const FIELD_FILTERS = { first_name: filterName, last_name: filterName }
 
 const EMPTY_FORM = {
   first_name: '',
@@ -24,7 +27,9 @@ export default function OrganizadorFormModal({ open, onClose, onSuccess }) {
   }, [open])
 
   const updateField = (field) => (e) => {
-    setForm((prev) => ({ ...prev, [field]: e.target.value }))
+    const f = FIELD_FILTERS[field]
+    const value = f ? f(e.target.value) : e.target.value
+    setForm((prev) => ({ ...prev, [field]: value }))
     setApiError('')
   }
 

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import ConfirmDialog from '../components/ConfirmDialog'
 import Icon from '../components/Icons'
 import MercadoPagoConnect from '../components/MercadoPagoConnect'
 import NocheFormModal from '../components/NocheFormModal'
@@ -31,6 +32,8 @@ export default function DashboardPage() {
   const [staffList, setStaffList] = useState([])
   const [modalState, setModalState] = useState({ type: null, data: null })
   const [breakdownData, setBreakdownData] = useState(null)
+  const [cancelConfirm, setCancelConfirm] = useState(null) // eventoId to confirm cancel
+  const [cancelError, setCancelError] = useState('')
 
   // Dynamic tabs: add Cierre de Caja if there's at least 1 cajera
   const hasCajera = staffList.some((s) => s.rol === 'cajera')
@@ -43,7 +46,7 @@ export default function DashboardPage() {
   // Fetch eventos on mount (only mine)
   useEffect(() => {
     let active = true
-    api.get('/eventos/?mis_eventos=true')
+    api.get('/eventos/mios/')
       .then((e) => { if (active) setEventos(Array.isArray(e) ? e : []) })
       .catch(() => { if (active) setEventos([]) })
     return () => { active = false }
@@ -61,9 +64,12 @@ export default function DashboardPage() {
   // Fetch staff list (to check for cajeras)
   useEffect(() => {
     let active = true
-    api.get('/personal/')
-      .then((data) => { if (active) setStaffList(Array.isArray(data) ? data : []) })
-      .catch(() => { if (active) setStaffList([]) })
+    const loadStaff = () => {
+      api.get('/personal/')
+        .then((data) => { if (active) setStaffList(Array.isArray(data) ? data : []) })
+        .catch(() => { if (active) setTimeout(loadStaff, 3000) })
+    }
+    loadStaff()
     return () => { active = false }
   }, [])
 
@@ -102,7 +108,7 @@ export default function DashboardPage() {
   // Refresh helpers
   const refreshEventos = useCallback(async () => {
     try {
-      const e = await api.get('/eventos/?mis_eventos=true')
+      const e = await api.get('/eventos/mios/')
       if (Array.isArray(e)) setEventos(e)
     } catch { /* retain current */ }
   }, [])
@@ -114,6 +120,26 @@ export default function DashboardPage() {
     } catch { setBoliche(null) }
   }, [])
 
+  // Al volver del OAuth de Mercado Pago, el backend redirige a /dashboard?mp_connected=true.
+  // Refrescamos el estado del boliche, mostramos un mensaje de éxito y limpiamos la URL.
+  const [mpSuccess, setMpSuccess] = useState(false)
+  const [mpErrorMsg, setMpErrorMsg] = useState('')
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('mp_connected') === 'true') {
+      setMpSuccess(true)
+      refreshBoliche()
+      window.history.replaceState({}, '', window.location.pathname)
+      const t = window.setTimeout(() => setMpSuccess(false), 6000)
+      return () => window.clearTimeout(t)
+    }
+    if (params.get('mp_error') === 'true') {
+      setMpErrorMsg('No se pudo conectar Mercado Pago. Revisá la configuración e intentá de nuevo.')
+      window.history.replaceState({}, '', window.location.pathname)
+    }
+    return undefined
+  }, [refreshBoliche])
+
   // Modal helpers
   const openModal = (type, data = null) => setModalState({ type, data })
   const closeModal = () => setModalState({ type: null, data: null })
@@ -123,18 +149,23 @@ export default function DashboardPage() {
   const triggerRefresh = useCallback(() => setRefreshKey((k) => k + 1), [])
 
   // Cancel event
-  const handleCancel = useCallback(async (eventoId) => {
-    const confirmado = window.confirm('¿Cancelar este evento? Esta acción no se puede deshacer.')
-    if (!confirmado) return
+  const handleCancel = useCallback((eventoId) => {
+    setCancelConfirm(eventoId)
+    setCancelError('')
+  }, [])
+
+  const confirmCancel = useCallback(async () => {
+    const eventoId = cancelConfirm
+    setCancelConfirm(null)
     try {
       await api.post(`/eventos/${eventoId}/cancelar/`, { motivo: 'Cancelado por organizador' })
       setEventos((prev) => prev.map((ev) =>
         ev.id === eventoId ? { ...ev, estado: 'cancelado' } : ev
       ))
     } catch (error) {
-      window.alert(error.data?.detail || error.message || 'No se pudo cancelar el evento.')
+      setCancelError(error.data?.detail || error.message || 'No se pudo cancelar el evento.')
     }
-  }, [])
+  }, [cancelConfirm])
 
   // Derived
   const occupancy = useMemo(() => {
@@ -156,6 +187,16 @@ export default function DashboardPage() {
             mpConnected={boliche?.mp_connected ?? false}
             onDisconnect={refreshBoliche}
           />
+          {mpSuccess && (
+            <div className="flex items-center gap-2 border border-emerald-400/60 bg-emerald-400/10 px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-300" role="status">
+              <Icon name="check" size={14} /> Mercado Pago conectado
+            </div>
+          )}
+          {mpErrorMsg && (
+            <div className="flex items-center gap-2 border border-door-red/60 bg-door-red/10 px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-wider text-door-red" role="alert">
+              <Icon name="close" size={14} /> {mpErrorMsg}
+            </div>
+          )}
           {/* Aforo badge */}
           {aforo && (
             <div className="flex items-center gap-2 border border-strobe/60 bg-strobe/10 px-3 py-2">
@@ -165,10 +206,6 @@ export default function DashboardPage() {
               </span>
             </div>
           )}
-          {/* Create button */}
-          <button onClick={() => openModal('noche-create')} className="btn-primary">
-            <Icon name="plus" size={17} /> Nuevo evento
-          </button>
         </div>
       </div>
 
@@ -192,6 +229,13 @@ export default function DashboardPage() {
       </nav>
 
       {/* Tab Content */}
+      {cancelError && (
+        <div className="mb-5 flex items-start gap-3 border border-door-red/50 bg-door-red/5 p-4 dark:bg-door-red/10">
+          <Icon name="close" size={16} className="mt-0.5 shrink-0 text-door-red" />
+          <p className="flex-1 text-xs leading-5 text-door-red">{cancelError}</p>
+          <button type="button" onClick={() => setCancelError('')} className="shrink-0 text-door-red/60 hover:text-door-red" aria-label="Cerrar"><Icon name="close" size={14} /></button>
+        </div>
+      )}
       {activeTab === 'metricas' && <MetricasTab eventos={eventos} />}
       {activeTab === 'noches' && (
         <NochesTab
@@ -211,8 +255,6 @@ export default function DashboardPage() {
       {activeTab === 'auditoria' && (
         <AuditoriaRrppTab
           eventos={eventos}
-          onCreateRrpp={() => openModal('rrpp-create')}
-          onAsignarRrpp={() => openModal('rrpp-assign')}
         />
       )}
       {activeTab === 'cierre-caja' && <CierreCajaTab eventos={eventos} />}
@@ -244,6 +286,16 @@ export default function DashboardPage() {
         onClose={() => setBreakdownData(null)}
         priceData={breakdownData?.priceData}
         eventoNombre={breakdownData?.nombre}
+      />
+      <ConfirmDialog
+        open={Boolean(cancelConfirm)}
+        title="Cancelar evento"
+        message="¿Cancelar este evento? Esta acción no se puede deshacer."
+        confirmText="Cancelar evento"
+        cancelText="Volver"
+        destructive
+        onConfirm={confirmCancel}
+        onCancel={() => setCancelConfirm(null)}
       />
 
     </main>

@@ -8,8 +8,6 @@ import { api } from '../../lib/api'
  *
  * Props:
  *   eventos: Evento[] — list of owner's events
- *   onCreateRrpp: () => void
- *   onAsignarRrpp: () => void
  */
 
 function getConversionColor(tasa) {
@@ -21,10 +19,11 @@ function getConversionColor(tasa) {
 function fmtDate(dateStr) {
   if (!dateStr) return ''
   const d = new Date(dateStr)
+  if (Number.isNaN(d.getTime())) return ''
   return new Intl.DateTimeFormat('es-AR', { day: '2-digit', month: 'short' }).format(d)
 }
 
-export default function AuditoriaRrppTab({ eventos = [], onCreateRrpp, onAsignarRrpp }) {
+export default function AuditoriaRrppTab({ eventos = [] }) {
   const [selectedEventId, setSelectedEventId] = useState(eventos[0]?.id || '')
   const [ranking, setRanking] = useState([])
   const [loading, setLoading] = useState(true)
@@ -37,21 +36,32 @@ export default function AuditoriaRrppTab({ eventos = [], onCreateRrpp, onAsignar
     }
   }, [eventos, selectedEventId])
 
-  const loadRanking = useCallback(async (eventoId) => {
+  const loadRanking = useCallback(async (eventoId, isPoll = false) => {
     if (!eventoId) { setRanking([]); setLoading(false); return }
-    setLoading(true)
+    if (!isPoll) setLoading(true)
     try {
       const data = await api.get(`/dashboard/ranking-rrpp/${eventoId}/`)
       setRanking(Array.isArray(data) ? data : [])
     } catch {
-      setRanking([])
+      if (!isPoll) {
+        // Retry once after 2s (handles token refresh race condition)
+        setTimeout(() => {
+          api.get(`/dashboard/ranking-rrpp/${eventoId}/`)
+            .then((data) => setRanking(Array.isArray(data) ? data : []))
+            .catch(() => setRanking([]))
+        }, 2000)
+      }
     } finally {
       setLoading(false)
     }
   }, [])
 
   useEffect(() => {
-    if (selectedEventId) loadRanking(selectedEventId)
+    if (!selectedEventId) return undefined
+    loadRanking(selectedEventId)
+    // REQ-6.2: polling del ranking de RRPP cada 30s.
+    const interval = window.setInterval(() => loadRanking(selectedEventId, true), 30000)
+    return () => window.clearInterval(interval)
   }, [selectedEventId, loadRanking])
 
   // Reset paid status when event changes
@@ -83,23 +93,9 @@ export default function AuditoriaRrppTab({ eventos = [], onCreateRrpp, onAsignar
   return (
     <div data-testid="auditoria-tab">
       {/* Header */}
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="eyebrow">Rendimiento de RRPP</p>
-          <h2 className="display-title mt-2 text-3xl">AUDITORÍA RRPP</h2>
-        </div>
-        <div className="flex gap-2">
-          {onCreateRrpp && (
-            <button onClick={onCreateRrpp} className="btn-secondary" data-testid="btn-alta-rrpp">
-              <Icon name="plus" size={15} /> Alta RRPP
-            </button>
-          )}
-          {onAsignarRrpp && (
-            <button onClick={onAsignarRrpp} className="btn-secondary" data-testid="btn-asignar-rrpp">
-              <Icon name="users" size={15} /> Asignar RRPP
-            </button>
-          )}
-        </div>
+      <div className="mb-6">
+        <p className="eyebrow">Rendimiento de RRPP</p>
+        <h2 className="display-title mt-2 text-3xl">AUDITORÍA RRPP</h2>
       </div>
 
       {/* Event selector */}

@@ -139,8 +139,9 @@ export default function MetricasTab({ eventos = [] }) {
       return
     }
     let active = true
-    setLoading(true)
-    Promise.all(
+    const run = (isPoll = false) => {
+      if (!isPoll) setLoading(true)
+      Promise.all(
       eventosToFetch.map((ev) => fetchRecaudacion(ev.id).then((data) => ({ evento: ev, data })))
     ).then((results) => {
       if (!active) return
@@ -160,7 +161,11 @@ export default function MetricasTab({ eventos = [] }) {
       })
       setLoading(false)
     })
-    return () => { active = false }
+    }
+    run()
+    // REQ-6.2: polling de recaudación cada 30s.
+    const interval = window.setInterval(() => run(true), 30000)
+    return () => { active = false; window.clearInterval(interval) }
   }, [eventosToFetch, fetchRecaudacion])
 
   const kpis = useMemo(() => {

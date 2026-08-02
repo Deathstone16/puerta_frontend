@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import ConfirmDialog from '../../components/ConfirmDialog'
 import Icon from '../../components/Icons'
 import { api } from '../../lib/api'
 
@@ -21,6 +22,7 @@ export default function GestionPersonalTab({ onCreatePersonal, onAsignarPersonal
   const [editingId, setEditingId] = useState(null)
   const [editForm, setEditForm] = useState({})
   const [busy, setBusy] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState(null) // { id, nombre }
 
   const fetchPersonal = useCallback(async () => {
     try {
@@ -46,8 +48,12 @@ export default function GestionPersonalTab({ onCreatePersonal, onAsignarPersonal
     catch { /* */ }
     finally { setBusy(false) }
   }
-  const handleDelete = async (id, nombre) => {
-    if (!window.confirm(`¿Desactivar a "${nombre}"?`)) return
+  const handleDelete = (id, nombre) => {
+    setDeleteTarget({ id, nombre })
+  }
+  const confirmDelete = async () => {
+    const { id } = deleteTarget
+    setDeleteTarget(null)
     setBusy(true)
     try { await api.delete(`/personal/${id}/`); fetchPersonal() }
     catch { /* */ }
@@ -121,6 +127,16 @@ export default function GestionPersonalTab({ onCreatePersonal, onAsignarPersonal
           </div>
         </div>
       )}
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        title="Desactivar personal"
+        message={`¿Desactivar a "${deleteTarget?.nombre || ''}"?`}
+        confirmText="Desactivar"
+        cancelText="Cancelar"
+        destructive
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   )
 }
