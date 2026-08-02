@@ -18,7 +18,9 @@ export default function OwnerShell() {
           <div className="ml-auto flex items-center gap-3">
             <div className="hidden text-right sm:block">
               <p className="text-xs font-bold text-gray-900 dark:text-paper-text">{session?.nombre}</p>
-              <p className="font-mono text-[9px] uppercase text-strobe">Dueño</p>
+              <p className="font-mono text-[9px] uppercase text-strobe">
+                {session?.isDemo ? 'MODO DEMO' : 'Dueño'}
+              </p>
             </div>
             <button onClick={toggleTheme} className="grid size-10 place-items-center border border-gray-200 text-gray-500 hover:border-strobe hover:text-strobe dark:border-white/15 dark:text-muted" aria-label={isDark ? 'Modo claro' : 'Modo oscuro'}>
               {isDark ? '☀️' : '🌙'}
@@ -27,6 +29,11 @@ export default function OwnerShell() {
           </div>
         </div>
       </header>
+      {session?.isDemo && (
+        <div className="border-b border-amber-300 bg-amber-100 px-4 py-2 text-center font-mono text-[10px] uppercase tracking-[.18em] text-amber-800">
+          Modo demo — sin conexión con el backend. Los datos no son reales.
+        </div>
+      )}
       <Outlet />
     </div>
   )

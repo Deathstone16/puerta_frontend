@@ -45,7 +45,7 @@ export async function apiRequest(path, options = {}, canRetry = true) {
     throw networkError
   }
 
-  if (response.status === 401 && canRetry && token) {
+  if (response.status === 401 && canRetry && token && !path.includes('/auth/refresh/')) {
     const refreshedToken = await authProvider.refreshAccessToken()
     if (refreshedToken) return apiRequest(path, options, false)
   }

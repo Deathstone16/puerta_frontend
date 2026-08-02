@@ -50,23 +50,35 @@ function saveSession(session) {
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(loadStoredSession)
   const sessionRef = useRef(session)
-  useEffect(() => { sessionRef.current = session; saveSession(session) }, [session])
+  sessionRef.current = session
+  useEffect(() => { saveSession(session) }, [session])
 
   const logout = useCallback(() => setSession(null), [])
+
+  const refreshPromiseRef = useRef(null)
 
   const refreshAccessToken = useCallback(async () => {
     const current = sessionRef.current
     if (!current?.refreshToken || current.isDemo) return current?.accessToken || null
-    try {
-      const data = await api.post('/auth/refresh/', { refresh: current.refreshToken })
-      const next = { ...current, accessToken: data.access, expiresAt: Date.now() + SESSION_MS }
-      setSession(next)
-      sessionRef.current = next
-      return data.access
-    } catch {
-      logout()
-      return null
-    }
+    // Lock: si ya hay un refresh en curso, todos esperan el mismo resultado.
+    // Evita refreshes concurrentes con el mismo refresh token, que con
+    // ROTATE_REFRESH_TOKENS + BLACKLIST_AFTER_ROTATION invalidarían al resto.
+    if (refreshPromiseRef.current) return refreshPromiseRef.current
+    refreshPromiseRef.current = (async () => {
+      try {
+        const data = await api.post('/auth/refresh/', { refresh: current.refreshToken })
+        const next = { ...current, accessToken: data.access, expiresAt: Date.now() + SESSION_MS }
+        setSession(next)
+        sessionRef.current = next
+        return data.access
+      } catch {
+        logout()
+        return null
+      } finally {
+        refreshPromiseRef.current = null
+      }
+    })()
+    return refreshPromiseRef.current
   }, [logout])
 
   useEffect(() => {
